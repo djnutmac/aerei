@@ -160,19 +160,30 @@ function buildSky(){
 function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in diretta · "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
 
 // ===== DATI VOLO =====
+// Le API rispondono dal browser ma senza permesso CORS per le pagine web: provo diretto, poi via proxy CORS pubblici
+const PROX=[u=>u,u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
+const VIA=["diretto","proxy 1","proxy 2"]; let via=0;
+async function getJSON(url){
+  let last;
+  for(let k=0;k<PROX.length;k++){const i=(via+k)%PROX.length;
+    try{const r=await fetch(PROX[i](url)); if(!r.ok)throw new Error("HTTP "+r.status); const j=await r.json(); via=i; return j;}
+    catch(e){last=e;}
+  }
+  throw last;
+}
 const routeCache={};
 async function getRoute(cs){
   if(!cs)return null; if(cs in routeCache)return routeCache[cs];
-  try{const r=await fetch("https://api.adsbdb.com/v0/callsign/"+cs); const j=await r.json();
+  try{const j=await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
 async function fetchAircraft(){
   // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
-  const res=await Promise.allSettled(APIS.map(f=>fetch(f(HOME.lat,HOME.lon,RADIUS_NM)).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))));
+  const res=await Promise.allSettled(APIS.map(f=>getJSON(f(HOME.lat,HOME.lon,RADIUS_NM))));
   const map=new Map(); let ok=0, errs=[];
   res.forEach(r=>{if(r.status!=="fulfilled")errs.push(String(r.reason&&r.reason.message||r.reason));
     if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
-  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":"");
+  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":"");
   return ok?[...map.values()]:null;
 }
 let current=null;
