@@ -31,6 +31,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
+#status{position:absolute;left:4cqw;bottom:1.6cqh;font-size:1.1cqw;opacity:.55}
 .live{position:absolute;right:4cqw;bottom:4.4cqh;display:flex;gap:.8cqw;align-items:center;font-size:1.5cqw}
 .dot{width:1.1cqw;height:1.1cqw;border-radius:50%;background:#ff4b4b;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.25}}
@@ -60,7 +61,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 </style>
 </head>
 <body>
-<div class="poster" id="poster" data-t="night">
+<div class="poster idle" id="poster" data-t="night">
   <div class="stars" id="stars"></div>
   <div class="orb"></div>
   <div id="clouds"></div>
@@ -73,18 +74,20 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   </div>
   <div class="compass"><b>N</b>
     <svg id="arrow" viewBox="0 0 20 20"><path d="M10 1 L16 18 L10 14 L4 18Z" fill="#ff5a4d"/></svg></div>
+  <div id="status"></div>
   <div class="live"><div class="dot"></div><span id="clock"></span></div>
-  <div id="empty"><div>Nessun aereo sopra di te<small>Resto in ascolto: appena ne passa uno lo disegno.</small></div></div>
+  <div id="empty"><div><span id="emptyTxt">Cerco aerei sopra di te…</span><small>Resto in ascolto: appena ne passa uno lo disegno.</small></div></div>
 </div>
 
 <script>
 // ===== CONFIGURAZIONE =====
 const HOME = {lat:45.3158, lon:8.8573};   // Vigevano, via Brigate Partigiane 7 (ritocca se vuoi)
-const RADIUS_NM = 12;                      // raggio di ricerca in miglia nautiche
+const RADIUS_NM = 20;                      // raggio di ricerca in miglia nautiche
 const POLL_MS = 8000;
 const APIS = [
   (la,lo,d)=>`https://api.adsb.lol/v2/point/${la}/${lo}/${d}`,
-  (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`
+  (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`,
+  (la,lo,d)=>`https://opendata.adsb.fi/api/v2/lat/${la}/lon/${lo}/dist/${d}`
 ];
 
 // ===== LIVREE (prefisso ICAO callsign -> corpo, coda, accento, nome) =====
@@ -164,14 +167,16 @@ async function getRoute(cs){
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
 async function fetchAircraft(){
-  for(const api of APIS){
-    try{const r=await fetch(api(HOME.lat,HOME.lon,RADIUS_NM)); if(!r.ok)continue; const j=await r.json(); return j.ac||j.aircraft||[];}catch(e){}
-  }
-  return null;
+  // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
+  const res=await Promise.allSettled(APIS.map(f=>fetch(f(HOME.lat,HOME.lon,RADIUS_NM)).then(r=>r.ok?r.json():Promise.reject())));
+  const map=new Map(); let ok=0;
+  res.forEach(r=>{if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
+  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio`;
+  return ok?[...map.values()]:null;
 }
 let current=null;
 function pick(list){
-  const cand=list.filter(a=>a.lat!=null&&typeof a.alt_baro==="number"&&a.alt_baro>200).map(a=>{
+  const cand=list.filter(a=>a.lat!=null&&typeof a.alt_baro==="number"&&a.alt_baro>200&&(a.seen_pos==null||a.seen_pos<60)).map(a=>{
     const d=dist(HOME.lat,HOME.lon,a.lat,a.lon), alt=a.alt_baro*0.0003048;
     return {a,s:Math.hypot(d,alt)};}).sort((x,y)=>x.s-y.s);
   if(!cand.length)return null;
@@ -199,7 +204,8 @@ async function render(a){
 }
 async function loop(){
   const list=await fetchAircraft();
-  if(list){const a=pick(list); if(a)await render(a); else{current=null;$("poster").classList.add("idle");}}
+  if(list){const a=pick(list); if(a)await render(a); else{current=null;$("emptyTxt").textContent="Nessun aereo sopra di te";$("poster").classList.add("idle");}}
+  else if(!current){$("emptyTxt").textContent="Non riesco a leggere i dati dei voli";$("poster").classList.add("idle");}
   setTimeout(loop,POLL_MS);
 }
 // ===== SCHERMO INTERO (click / tap) =====
