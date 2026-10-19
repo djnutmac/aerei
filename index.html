@@ -10,7 +10,7 @@
 :root{--sky1:#0d1b3a;--sky2:#2b3f7a;--ink:#fff;--cloud:#ffffff22}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;background:#0a0f1f;font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif}
-body{display:grid;place-items:center}
+body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
 .poster{position:relative;container-type:size;width:min(100vw,177.78vh);aspect-ratio:16/9;overflow:hidden;color:var(--ink);
   background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s}
 .poster[data-t=day]{--sky1:#4aa8f0;--sky2:#bfe6ff;--cloud:#ffffffcc}
@@ -202,6 +202,18 @@ async function loop(){
   if(list){const a=pick(list); if(a)await render(a); else{current=null;$("poster").classList.add("idle");}}
   setTimeout(loop,POLL_MS);
 }
+// ===== SCHERMO INTERO (click / tap) =====
+function toggleFS(){
+  const d=document, el=d.documentElement;
+  const on=d.fullscreenElement||d.webkitFullscreenElement;
+  try{
+    if(on){(d.exitFullscreen||d.webkitExitFullscreen).call(d);}
+    else{const f=el.requestFullscreen||el.webkitRequestFullscreen; if(f)f.call(el,{navigationUI:"hide"});}
+  }catch(e){}
+}
+document.addEventListener("click",toggleFS);
+document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
+
 buildSky(); tick(); setInterval(tick,30000); loop();
 </script>
 </body>
