@@ -168,10 +168,11 @@ async function getRoute(cs){
 }
 async function fetchAircraft(){
   // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
-  const res=await Promise.allSettled(APIS.map(f=>fetch(f(HOME.lat,HOME.lon,RADIUS_NM)).then(r=>r.ok?r.json():Promise.reject())));
-  const map=new Map(); let ok=0;
-  res.forEach(r=>{if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
-  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio`;
+  const res=await Promise.allSettled(APIS.map(f=>fetch(f(HOME.lat,HOME.lon,RADIUS_NM)).then(r=>r.ok?r.json():Promise.reject(new Error('HTTP '+r.status)))));
+  const map=new Map(); let ok=0, errs=[];
+  res.forEach(r=>{if(r.status!=="fulfilled")errs.push(String(r.reason&&r.reason.message||r.reason));
+    if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
+  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":"");
   return ok?[...map.values()]:null;
 }
 let current=null;
