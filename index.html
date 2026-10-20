@@ -7,45 +7,98 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--sky1:#0d1b3a;--sky2:#2b3f7a;--ink:#fff;--cloud:#ffffff22}
+:root{
+  --sky1:#0d1b3a;--sky2:#2b3f7a;--ink:#fff;--cloud:#ffffff22;
+  --w-drift:-20px;
+}
 *{box-sizing:border-box;margin:0}
 html,body{height:100%;background:#0a0f1f;font-family:Fredoka,"Trebuchet MS",system-ui,sans-serif}
 body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none}
-.poster{position:relative;container-type:size;width:min(100vw,177.78vh);aspect-ratio:16/9;overflow:hidden;color:var(--ink);
-  background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s}
+.poster{
+  position:relative;container-type:size;width:min(100vw,177.78vh);aspect-ratio:16/9;overflow:hidden;color:var(--ink);
+  background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s;
+}
+
+/* Fasi luce solare */
 .poster[data-t=day]{--sky1:#4aa8f0;--sky2:#bfe6ff;--cloud:#ffffffcc}
 .poster[data-t=dusk]{--sky1:#5b3d8f;--sky2:#ffa870;--cloud:#ffd9c299}
 .poster[data-t=night]{--sky1:#0b1534;--sky2:#2a3a78;--cloud:#8fa0d533}
-.stars{position:absolute;inset:0;opacity:0;transition:opacity 2s}
-.poster[data-t=night] .stars{opacity:1}
+
+/* Sovrascrittura tonalità meteo */
+.poster[data-weather=cloudy]{--cloud:#cbd5e1bb}
+.poster[data-weather=rain]{--sky1:#2a3b5c;--sky2:#4a5f82;--cloud:#5b6a82dd}
+.poster[data-weather=storm]{--sky1:#111625;--sky2:#1f283d;--cloud:#2c3547ee}
+.poster[data-weather=snow]{--sky1:#3b4d66;--sky2:#829bb8;--cloud:#e2e8f0ee}
+
+.stars{position:absolute;inset:0;opacity:0;transition:opacity 2s;z-index:1}
+.poster[data-t=night]:not([data-weather=rain]):not([data-weather=storm]) .stars{opacity:1}
 .star{position:absolute;width:.25cqw;height:.25cqw;background:#fff;border-radius:50%;animation:tw 3s infinite alternate}
 @keyframes tw{to{opacity:.2}}
-.orb{position:absolute;right:9cqw;top:7cqh;width:9cqw;height:9cqw;border-radius:50%;transition:all 2s}
+
+.orb{position:absolute;right:9cqw;top:7cqh;width:9cqw;height:9cqw;border-radius:50%;transition:all 2s;z-index:1}
 .poster[data-t=day] .orb{background:#ffd93b;box-shadow:0 0 0 1.2cqw #ffd93b55,0 0 0 2.6cqw #ffd93b33}
 .poster[data-t=dusk] .orb{background:#ff7a45;box-shadow:0 0 0 1.2cqw #ff7a4555;top:30cqh}
 .poster[data-t=night] .orb{background:#f4ecd0;box-shadow:inset -2.2cqw -.6cqw 0 #cfc5a0}
-.cl{position:absolute;height:4cqh;border-radius:5cqh;background:var(--cloud);animation:drift linear infinite}
+.poster[data-weather=storm] .orb, .poster[data-weather=rain] .orb{opacity:0.35}
+
+/* Nuvole */
+#clouds{position:absolute;inset:0;z-index:2;pointer-events:none}
+.cl{position:absolute;height:4.2cqh;border-radius:5cqh;background:var(--cloud);animation:drift linear infinite}
 .cl::before,.cl::after{content:"";position:absolute;background:inherit;border-radius:50%}
-.cl::before{width:5cqh;height:5cqh;left:18%;top:-2.4cqh}
-.cl::after{width:7cqh;height:7cqh;left:42%;top:-3.6cqh}
+.cl::before{width:5.2cqh;height:5.2cqh;left:18%;top:-2.4cqh}
+.cl::after{width:7.5cqh;height:7.5cqh;left:42%;top:-3.8cqh}
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
-.top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95;z-index:3}
+.windy .cl{animation-duration:18s!important}
+
+/* Effetti Meteo (Pioggia, Neve, Fulmini) */
+#weather-layer{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.drop{
+  position:absolute;width:.15cqw;height:2.6cqh;background:linear-gradient(transparent,#ffffffcc);
+  border-radius:2px;animation:rain-fall linear infinite;
+}
+@keyframes rain-fall{
+  from{transform:translate3d(0,-10cqh,0)}
+  to{transform:translate3d(var(--w-drift),110cqh,0)}
+}
+.flake{
+  position:absolute;width:.6cqw;height:.6cqw;background:#ffffffdd;border-radius:50%;
+  filter:blur(0.5px);animation:snow-fall linear infinite;
+}
+@keyframes snow-fall{
+  0%{transform:translate3d(0,-5cqh,0)}
+  50%{transform:translate3d(calc(var(--w-drift) + 4cqw),55cqh,0)}
+  100%{transform:translate3d(var(--w-drift),110cqh,0)}
+}
+#lightning{position:absolute;inset:0;background:#eef5ff;opacity:0;pointer-events:none;z-index:4}
+.storm #lightning{animation:flash 6.5s infinite}
+@keyframes flash{
+  0%,91%,93%,95%,100%{opacity:0}
+  92%{opacity:.85}
+  94%{opacity:.6}
+}
+
+/* Titolo e Testata */
+.top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95;z-index:5}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
 .live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
 .dot{width:1.1cqw;height:1.1cqw;border-radius:50%;background:#ff4b4b;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.25}}
+.weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* Centro esatto sia orizzontale che verticale */
-#stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:2}
+/* Aereo centrato sia in X che in Y */
+#stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:4}
 #plane{width:68cqw;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
 #plane.flip{transform:scaleX(-1)}
 #plane svg{width:100%;display:block;overflow:visible}
 @keyframes bob{50%{translate:0 -1.6cqh;rotate:-1.2deg}}
+.windy #plane{animation:bob 2.8s ease-in-out infinite, turb 0.4s ease-in-out infinite alternate}
+@keyframes turb{from{translate:0 -.3cqh}to{translate:0 .3cqh}}
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
 
+/* Scheda Info Volo */
 .info{position:absolute;left:0;right:0;bottom:0;height:34cqh;padding:0 4cqw 4cqh;display:flex;flex-direction:column;justify-content:flex-end;
-  background:linear-gradient(#0000,#0b1020cc 40%);z-index:3;pointer-events:none}
+  background:linear-gradient(#0000,#0b1020cc 40%);z-index:5;pointer-events:none}
 .poster[data-t=day] .info{background:linear-gradient(#0000,#0b2a5acc 40%)}
 .who{font-size:1.9cqw;font-weight:400;opacity:.9}
 .route{font-size:7.4cqw;font-weight:700;line-height:1.05;letter-spacing:-.02em;white-space:nowrap}
@@ -54,16 +107,16 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .stats span{font-weight:400;opacity:.75;font-size:1.5cqw;margin-left:.4cqw}
 
 /* Bussola */
-.compass{position:absolute;right:4cqw;bottom:11cqh;width:7cqw;height:7cqw;border:.35cqw solid #fff9;border-radius:50%;display:grid;place-items:center;font-size:1.3cqw;z-index:3}
+.compass{position:absolute;right:4cqw;bottom:11cqh;width:7cqw;height:7cqw;border:.35cqw solid #fff9;border-radius:50%;display:grid;place-items:center;font-size:1.3cqw;z-index:5}
 .compass b{position:absolute;top:-2cqw;font-weight:600}
 .compass svg{width:3.6cqw;transition:transform 1s}
 
-/* Stato e Diagnostica in basso a destra sotto alla bussola */
-#status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:46cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:3}
+/* Diagnostica in basso a destra */
+#status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:50cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:5}
 #status .bad{color:#ff8a80;font-weight:600}
 #status .good{color:#9be59b;font-weight:600}
 
-#empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;font-size:4cqw;font-weight:600;padding:0 8cqw;z-index:4}
+#empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;font-size:4cqw;font-weight:600;padding:0 8cqw;z-index:6}
 #empty small{display:block;font-weight:400;font-size:1.8cqw;opacity:.8;margin-top:1.2cqh}
 .idle #stage,.idle .info,.idle .compass{display:none}
 .idle #empty{display:grid}
@@ -75,8 +128,15 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   <div class="stars" id="stars"></div>
   <div class="orb"></div>
   <div id="clouds"></div>
+  <div id="weather-layer"></div>
+  <div id="lightning"></div>
   <div class="top">Il cielo sopra Vigevano
-    <div class="live"><div class="dot"></div><span id="clock"></span></div></div>
+    <div class="live">
+      <div class="dot"></div>
+      <span id="clock"></span>
+      <span class="weather-tag" id="weather-desc">Meteo…</span>
+    </div>
+  </div>
   <div id="stage"><div id="plane"></div></div>
   <div class="info">
     <div class="who" id="who"></div>
@@ -96,7 +156,7 @@ const RADIUS_NM = 20;
 const POLL_MS = 6000;
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
 
-// ===== LIVREE =====
+// ===== LIVREE COMPAGNIE =====
 const L = {
   ITY:["#f4f6fa","#1f4aa8","#1fa35b","ITA Airways"], RYR:["#f4f6fa","#2a4fd0","#ffd300","Ryanair"],
   EZY:["#ff6a00","#ff6a00","#fff","easyJet"], EJU:["#ff6a00","#ff6a00","#fff","easyJet"],
@@ -159,15 +219,109 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-function skyPhase(){const h=new Date().getHours()+new Date().getMinutes()/60;
-  const m=new Date().getMonth(); const rise=m>9||m<2?7.4:m>3&&m<8?6:6.7, set=m>9||m<2?17:m>3&&m<8?20.6:18.6;
-  if(h>rise+.7&&h<set-.7)return"day"; if(h>rise-.7&&h<set+.7)return"dusk"; return"night";}
+// ===== GESTIONE METEO (Open-Meteo ECMWF/DWD) =====
+let currentWeather = { type: "clear", temp: null, wind: 0, code: 0 };
+
+function setSkyTheme(type, isWindy) {
+  const p = $("poster");
+  p.dataset.weather = type;
+  p.classList.toggle("windy", isWindy);
+  p.classList.toggle("storm", type === "storm");
+
+  // Inclinazione pioggia/neve secondo il vento
+  const drift = isWindy ? "-65px" : "-20px";
+  document.documentElement.style.setProperty("--w-drift", drift);
+
+  // Generazione particelle meteo
+  const wLayer = $("weather-layer");
+  wLayer.innerHTML = "";
+  if (type === "rain" || type === "storm") {
+    const count = type === "storm" ? 55 : 35;
+    for (let i = 0; i < count; i++) {
+      const drop = document.createElement("div");
+      drop.className = "drop";
+      drop.style.left = `${Math.random() * 110 - 5}%`;
+      drop.style.top = `${Math.random() * -30}%`;
+      drop.style.animationDuration = `${0.45 + Math.random() * 0.35}s`;
+      drop.style.animationDelay = `${Math.random() * 2}s`;
+      wLayer.appendChild(drop);
+    }
+  } else if (type === "snow") {
+    for (let i = 0; i < 40; i++) {
+      const flake = document.createElement("div");
+      flake.className = "flake";
+      flake.style.left = `${Math.random() * 110 - 5}%`;
+      flake.style.top = `${Math.random() * -30}%`;
+      flake.style.animationDuration = `${2.5 + Math.random() * 3}s`;
+      flake.style.animationDelay = `${Math.random() * 3}s`;
+      flake.style.transform = `scale(${0.5 + Math.random()})`;
+      wLayer.appendChild(flake);
+    }
+  }
+}
+
+async function fetchWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${HOME.lat}&longitude=${HOME.lon}&current=temperature_2m,weather_code,cloud_cover,wind_speed_10m,wind_gusts_10m&timezone=auto`;
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const j = await r.json();
+    const c = j.current;
+    if (!c) return;
+
+    const code = c.weather_code;
+    const wind = c.wind_speed_10m || 0;
+    const gusts = c.wind_gusts_10m || wind;
+    const temp = Math.round(c.temperature_2m);
+    const isWindy = wind >= 28 || gusts >= 38;
+
+    let type = "clear";
+    let desc = "Sereno";
+
+    // Decodifica standard codici WMO
+    if (code === 0) { type = "clear"; desc = "Sereno"; }
+    else if (code >= 1 && code <= 2) { type = "clear"; desc = "Poco nuvoloso"; }
+    else if (code === 3) { type = "cloudy"; desc = "Coperto"; }
+    else if (code === 45 || code === 48) { type = "cloudy"; desc = "Nebbia"; }
+    else if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82)) {
+      type = "rain"; desc = code >= 65 ? "Pioggia forte" : "Pioggia";
+    } else if ((code >= 71 && code <= 77) || (code >= 85 && code <= 86)) {
+      type = "snow"; desc = "Neve";
+    } else if (code >= 95) {
+      type = "storm"; desc = "Temporale";
+    }
+
+    if (isWindy) desc += " · Vento";
+
+    currentWeather = { type, temp, wind, code };
+    $("weather-desc").textContent = `${temp}°C · ${desc}`;
+    setSkyTheme(type, isWindy);
+  } catch (e) {
+    $("weather-desc").textContent = "Meteo locale";
+  }
+}
+
+// ===== CIELO E CICLO GIORNO/NOTTE =====
+function skyPhase(){
+  const h=new Date().getHours()+new Date().getMinutes()/60;
+  const m=new Date().getMonth();
+  const rise=m>9||m<2?7.4:m>3&&m<8?6:6.7, set=m>9||m<2?17:m>3&&m<8?20.6:18.6;
+  if(h>rise+.7&&h<set-.7)return"day";
+  if(h>rise-.7&&h<set+.7)return"dusk";
+  return"night";
+}
+
 function buildSky(){
   $("stars").innerHTML=Array.from({length:70},()=>`<i class="star" style="left:${Math.random()*100}%;top:${Math.random()*55}%;animation-delay:${Math.random()*3}s"></i>`).join("");
-  $("clouds").innerHTML=Array.from({length:5},(_,i)=>`<div class="cl" style="width:${12+Math.random()*10}cqw;top:${8+Math.random()*34}cqh;animation-duration:${70+i*25}s;animation-delay:-${i*28}s"></div>`).join("");
+  $("clouds").innerHTML=Array.from({length:6},(_,i)=>`<div class="cl" style="width:${13+Math.random()*12}cqw;top:${6+Math.random()*36}cqh;animation-duration:${65+i*22}s;animation-delay:-${i*20}s"></div>`).join("");
 }
-function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in diretta · "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
 
+function tick(){
+  $("poster").dataset.t = skyPhase();
+  $("clock").textContent = "in diretta · " + new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
+}
+
+// ===== TRATTE E VOLI =====
 function routeOK(fr,a){
   if(!fr||!fr.origin||!fr.destination)return false;
   const o=fr.origin,d=fr.destination;
@@ -176,9 +330,11 @@ function routeOK(fr,a){
   const op=dist(o.latitude,o.longitude,a.lat,a.lon), pd=dist(a.lat,a.lon,d.latitude,d.longitude);
   return op+pd<=od*1.15+80;
 }
+
 const routeCache={};
 async function getRoute(cs){
-  if(!cs)return null; if(cs in routeCache)return routeCache[cs];
+  if(!cs)return null;
+  if(cs in routeCache)return routeCache[cs];
   try{
     const r=await fetch(`${WORKER}/route?cs=${cs}`);
     const j=await r.json();
@@ -222,19 +378,28 @@ function pick(list){
   const keep=cand.find(c=>c.a.hex===current);
   return (keep&&keep.s<cand[0].s*1.6?keep:cand[0]).a;
 }
-function kindOf(a){const t=a.t||""; if(WIDE.includes(t)||a.category==="A5")return"wide";
-  if(PROP.includes(t)||a.category==="A1"||a.category==="A7")return"prop"; return"narrow";}
+
+function kindOf(a){
+  const t=a.t||"";
+  if(WIDE.includes(t)||a.category==="A5")return"wide";
+  if(PROP.includes(t)||a.category==="A1"||a.category==="A7")return"prop";
+  return"narrow";
+}
 
 async function render(a){
   current=a.hex;
   const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
-  let fr=await getRoute(cs); if(!routeOK(fr,a))fr=null;
+  let fr=await getRoute(cs);
+  if(!routeOK(fr,a))fr=null;
   const liv=L[pre]||DEF, airline=(fr&&fr.airline&&fr.airline.name)||(L[pre]?L[pre][3]:"Volo");
-  const el=$("plane"); el.innerHTML=planeSVG(kindOf(a),liv);
-  const trk=a.track??a.true_heading??0; el.classList.toggle("flip",trk>180&&trk<360);
+  const el=$("plane");
+  el.innerHTML=planeSVG(kindOf(a),liv);
+  const trk=a.track??a.true_heading??0;
+  el.classList.toggle("flip",trk>180&&trk<360);
   const o=fr&&fr.origin, d=fr&&fr.destination;
   $("who").textContent=[airline,cs,NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
   const nm=x=>x?(x.iata_code||x.municipality):"?";
+
   if(fr){
     $("route").innerHTML=`${nm(o)} <i>→</i> ${nm(d)}`;
   }else if(a.orig_iata&&a.dest_iata){
@@ -242,6 +407,7 @@ async function render(a){
   }else{
     $("route").innerHTML=cs||"Volo in transito";
   }
+
   const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
   const km=dist(HOME.lat,HOME.lon,a.lat,a.lon);
   $("stats").innerHTML=`<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`;
@@ -251,8 +417,14 @@ async function render(a){
 
 async function loop(){
   const list=await fetchAircraft();
-  if(list){const a=pick(list); if(a)await render(a); else{current=null;$("emptyTxt").textContent="Nessun aereo sopra di te";$("poster").classList.add("idle");}}
-  else if(!current){$("emptyTxt").textContent="Non riesco a leggere i dati dei voli";$("poster").classList.add("idle");}
+  if(list){
+    const a=pick(list);
+    if(a)await render(a);
+    else{current=null;$("emptyTxt").textContent="Nessun aereo sopra di te";$("poster").classList.add("idle");}
+  }else if(!current){
+    $("emptyTxt").textContent="Non riesco a leggere i dati dei voli";
+    $("poster").classList.add("idle");
+  }
   setTimeout(loop,POLL_MS);
 }
 
@@ -267,7 +439,15 @@ function toggleFS(){
 document.addEventListener("click",toggleFS);
 document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
 
-buildSky(); tick(); setInterval(tick,30000); loop();
+buildSky();
+tick();
+setInterval(tick,30000);
+
+// Polling meteo ogni 5 minuti
+fetchWeather();
+setInterval(fetchWeather, 300000);
+
+loop();
 setTimeout(()=>{ runDiag(); setInterval(runDiag,60000); }, 2000);
 </script>
 </body>
