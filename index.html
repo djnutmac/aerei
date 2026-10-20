@@ -19,12 +19,12 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s;
 }
 
-/* Fasi di luce solare */
+/* Fasi di luce */
 .poster[data-t=day]{--sky1:#4aa8f0;--sky2:#bfe6ff;--cloud:#ffffffcc}
 .poster[data-t=dusk]{--sky1:#5b3d8f;--sky2:#ffa870;--cloud:#ffd9c299}
 .poster[data-t=night]{--sky1:#0b1534;--sky2:#2a3a78;--cloud:#8fa0d533}
 
-/* Sovrascrittura meteo da Open-Meteo */
+/* Meteo */
 .poster[data-weather=cloudy]{--cloud:#cbd5e1bb}
 .poster[data-weather=rain]{--sky1:#2a3b5c;--sky2:#4a5f82;--cloud:#5b6a82dd}
 .poster[data-weather=storm]{--sky1:#111625;--sky2:#1f283d;--cloud:#2c3547ee}
@@ -41,7 +41,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .poster[data-t=night] .orb{background:#f4ecd0;box-shadow:inset -2.2cqw -.6cqw 0 #cfc5a0}
 .poster[data-weather=storm] .orb, .poster[data-weather=rain] .orb{opacity:0.35}
 
-/* Nuvole dinamiche */
+/* Nuvole */
 #clouds{position:absolute;inset:0;z-index:2;pointer-events:none}
 .cl{position:absolute;height:4.2cqh;border-radius:5cqh;background:var(--cloud);animation:drift linear infinite}
 .cl::before,.cl::after{content:"";position:absolute;background:inherit;border-radius:50%}
@@ -50,7 +50,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .windy .cl{animation-duration:18s!important}
 
-/* Effetti Meteo (Pioggia, Neve, Fulmini) */
+/* Effetti meteo */
 #weather-layer{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
 .drop{
   position:absolute;width:.15cqw;height:2.6cqh;background:linear-gradient(transparent,#ffffffcc);
@@ -85,7 +85,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes pulse{50%{opacity:.25}}
 .weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* Aereo centrato sia in X che in Y */
+/* Aereo centrato in X e Y */
 #stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:4}
 #plane{width:68cqw;display:flex;justify-content:center;align-items:center}
 #plane svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
@@ -96,18 +96,18 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
 
-/* Foto reale del velivolo (Planespotters.net) */
+/* Foto reale dell'aereo */
 #real-photo-wrap{
   position:relative;max-width:64cqw;max-height:42cqh;display:flex;flex-direction:column;align-items:center;
   animation:bob 4.5s ease-in-out infinite;pointer-events:auto;
 }
 #real-photo{
-  max-width:100%;max-height:36cqh;border-radius:1.2cqw;box-shadow:0 1.2cqh 2.4cqh #00000077;
+  max-width:100%;max-height:36cqh;border-radius:1.2cqw;box-shadow:0 1.2cqh 2.4cqh #00000088;
   object-fit:contain;border:.2cqw solid #ffffff33;
 }
 .photo-credit{font-size:.85cqw;opacity:.75;margin-top:.6cqh;text-shadow:0 1px 3px #000}
 
-/* Pannello informazioni volo in basso */
+/* Info volo */
 .info{
   position:absolute;left:0;right:0;bottom:0;min-height:34cqh;padding:0 4cqw 3.5cqh;display:flex;flex-direction:column;justify-content:flex-end;
   background:linear-gradient(#0000,#0b1020dd 50%);z-index:5;pointer-events:none;
@@ -126,7 +126,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .compass b{position:absolute;top:-2cqw;font-weight:600}
 .compass svg{width:3.6cqw;transition:transform 1s}
 
-/* Diagnostica in basso a destra sotto alla bussola */
+/* Diagnostica in basso a destra */
 #status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:50cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:5}
 #status .bad{color:#ff8a80;font-weight:600}
 #status .good{color:#9be59b;font-weight:600}
@@ -172,7 +172,7 @@ const RADIUS_NM = 20;
 const POLL_MS = 6000;
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
 
-// ===== DIZIONARIO AEROPORTI PRINCIPALI =====
+// ===== DIZIONARIO AEROPORTI =====
 const AIRPORTS = {
   MXP:"Milano Malpensa", LIN:"Milano Linate", BGY:"Bergamo Orio al Serio", TRN:"Torino Caselle",
   GOA:"Genova", VRN:"Verona", VCE:"Venezia Marco Polo", TSF:"Treviso", BLQ:"Bologna",
@@ -181,35 +181,37 @@ const AIRPORTS = {
   AHO:"Alghero", SUF:"Lamezia Terme", REG:"Reggio Calabria", TRS:"Trieste",
   CDG:"Parigi Charles de Gaulle", ORY:"Parigi Orly", BVA:"Parigi Beauvais", NCE:"Nizza",
   LYS:"Lione", MRS:"Marsiglia", LHR:"Londra Heathrow", LGW:"Londra Gatwick", STN:"Londra Stansted",
-  LTN:"Londra Luton", MAN:"Manchester", EDI:"Edimburgo", FRA:"Francoforte", MUC:"Monaco di Baviera",
-  BER:"Berlino", DUS:"Düsseldorf", HAM:"Amburgo", CGN:"Colonia", AMS:"Amsterdam Schiphol",
-  BRU:"Bruxelles", CRL:"Bruxelles Charleroi", ZRH:"Zurigo", GVA:"Ginevra", BSL:"Basilea",
-  VIE:"Vienna", MAD:"Madrid Barajas", BCN:"Barcellona El Prat", VLC:"Valencia", AGP:"Malaga",
-  PMI:"Palma di Maiorca", IBZ:"Ibiza", SVQ:"Siviglia", ALC:"Alicante", LIS:"Lisbona", OPO:"Porto",
-  ATH:"Atene", HER:"Creta Heraklion", SKG:"Salonicco", IST:"Istanbul", SAW:"Istanbul Sabiha",
-  WAW:"Varsavia", KRK:"Cracovia", PRG:"Praga", BUD:"Budapest", DUB:"Dublino",
+  LTN:"Londra Luton", MAN:"Manchester", EDI:"Edimburgo", NCL:"Newcastle", BHX:"Birmingham",
+  FRA:"Francoforte", MUC:"Monaco di Baviera", BER:"Berlino", DUS:"Düsseldorf", HAM:"Amburgo",
+  AMS:"Amsterdam Schiphol", BRU:"Bruxelles", CRL:"Bruxelles Charleroi", ZRH:"Zurigo", GVA:"Ginevra",
+  BSL:"Basilea", VIE:"Vienna", MAD:"Madrid Barajas", BCN:"Barcellona El Prat", VLC:"Valencia",
+  AGP:"Malaga", PMI:"Palma di Maiorca", IBZ:"Ibiza", SVQ:"Siviglia", ALC:"Alicante",
+  LIS:"Lisbona", OPO:"Porto", ATH:"Atene", HER:"Creta", SKG:"Salonicco", IST:"Istanbul",
+  SAW:"Istanbul Sabiha", WAW:"Varsavia", KRK:"Cracovia", PRG:"Praga", BUD:"Budapest", DUB:"Dublino",
   JFK:"New York JFK", EWR:"New York Newark", MIA:"Miami", ORD:"Chicago", LAX:"Los Angeles",
-  BOS:"Boston", ATL:"Atlanta", DXB:"Dubai", AUH:"Abu Dhabi", DOH:"Doha", CAI:"Il Cairo",
-  CMN:"Casablanca", TUN:"Tunisi", NRT:"Tokyo Narita", HND:"Tokyo Haneda", SIN:"Singapore"
+  DXB:"Dubai", AUH:"Abu Dhabi", DOH:"Doha", CAI:"Il Cairo", CMN:"Casablanca", TUN:"Tunisi"
 };
 
-// ===== LIVREE COMPAGNIE =====
+// ===== LIVREE COMPAGNIE (include Jet2, EasyJet, Ryanair, Wizz, Neos, ecc) =====
 const L = {
+  EXS:["#f4f6fa","#cf142b","#002b66","Jet2.com"],
   ITY:["#f4f6fa","#1f4aa8","#1fa35b","ITA Airways"], RYR:["#f4f6fa","#2a4fd0","#ffd300","Ryanair"],
   EZY:["#ff6a00","#ff6a00","#fff","easyJet"], EJU:["#ff6a00","#ff6a00","#fff","easyJet"],
-  WZZ:["#f4f6fa","#c4007a","#c4007a","Wizz Air"], DLH:["#f4f6fa","#0a2a6e","#ffbf00","Lufthansa"],
-  AFR:["#f4f6fa","#0a2a6e","#e2272e","Air France"], BAW:["#f4f6fa","#0a2a6e","#e2272e","British Airways"],
-  KLM:["#4aa8e8","#4aa8e8","#fff","KLM"], UAE:["#f4f6fa","#d71920","#c9a24b","Emirates"],
-  QTR:["#f4f6fa","#5c0632","#5c0632","Qatar Airways"], ETD:["#f4f6fa","#b8975a","#b8975a","Etihad"],
-  SWR:["#f4f6fa","#e2272e","#e2272e","Swiss"], VLG:["#f4f6fa","#f2c100","#d3202a","Vueling"],
-  TAP:["#f4f6fa","#e2272e","#1b8a4a","TAP Air Portugal"], IBE:["#f4f6fa","#d7192d","#ffc400","Iberia"],
-  THY:["#f4f6fa","#d7192d","#d7192d","Turkish Airlines"], AUA:["#f4f6fa","#e2272e","#e2272e","Austrian"],
-  SAS:["#f4f6fa","#1c2a6e","#1c2a6e","SAS"], FIN:["#f4f6fa","#1c2a6e","#1c2a6e","Finnair"],
-  DAL:["#f4f6fa","#c01933","#003366","Delta"], UAL:["#f4f6fa","#0a4a9e","#0a4a9e","United"],
-  AAL:["#c8ccd2","#0c3b7a","#d71920","American"], ELY:["#f4f6fa","#0a3b8e","#0a3b8e","El Al"],
-  CLX:["#f4f6fa","#e8c200","#e8c200","Cargolux"], FDX:["#f4f6fa","#4d148c","#ff6200","FedEx"],
-  UPS:["#6b4a2b","#6b4a2b","#ffc72c","UPS"], DHX:["#ffcc00","#ffcc00","#d40511","DHL"],
-  GEC:["#f4f6fa","#ffcc00","#d40511","Lufthansa Cargo"],
+  EZS:["#ff6a00","#ff6a00","#fff","easyJet Switzerland"],
+  WZZ:["#f4f6fa","#c4007a","#c4007a","Wizz Air"], WMT:["#f4f6fa","#c4007a","#c4007a","Wizz Air Malta"],
+  DLH:["#f4f6fa","#0a2a6e","#ffbf00","Lufthansa"], AFR:["#f4f6fa","#0a2a6e","#e2272e","Air France"],
+  BAW:["#f4f6fa","#0a2a6e","#e2272e","British Airways"], KLM:["#4aa8e8","#4aa8e8","#fff","KLM"],
+  UAE:["#f4f6fa","#d71920","#c9a24b","Emirates"], QTR:["#f4f6fa","#5c0632","#5c0632","Qatar Airways"],
+  ETD:["#f4f6fa","#b8975a","#b8975a","Etihad"], SWR:["#f4f6fa","#e2272e","#e2272e","Swiss"],
+  VLG:["#f4f6fa","#f2c100","#d3202a","Vueling"], TAP:["#f4f6fa","#e2272e","#1b8a4a","TAP Air Portugal"],
+  IBE:["#f4f6fa","#d7192d","#ffc400","Iberia"], THY:["#f4f6fa","#d7192d","#d7192d","Turkish Airlines"],
+  AUA:["#f4f6fa","#e2272e","#e2272e","Austrian"], SAS:["#f4f6fa","#1c2a6e","#1c2a6e","SAS"],
+  FIN:["#f4f6fa","#1c2a6e","#1c2a6e","Finnair"], DAL:["#f4f6fa","#c01933","#003366","Delta"],
+  UAL:["#f4f6fa","#0a4a9e","#0a4a9e","United"], AAL:["#c8ccd2","#0c3b7a","#d71920","American"],
+  ELY:["#f4f6fa","#0a3b8e","#0a3b8e","El Al"], CLX:["#f4f6fa","#e8c200","#e8c200","Cargolux"],
+  FDX:["#f4f6fa","#4d148c","#ff6200","FedEx"], UPS:["#6b4a2b","#6b4a2b","#ffc72c","UPS"],
+  DHX:["#ffcc00","#ffcc00","#d40511","DHL"], BCS:["#ffcc00","#ffcc00","#d40511","DHL Air"],
+  DHK:["#ffcc00","#ffcc00","#d40511","DHL UK"], GEC:["#f4f6fa","#ffcc00","#d40511","Lufthansa Cargo"],
   PGT:["#f4f6fa","#f2c200","#d3202a","Pegasus Airlines"], NOS:["#f4f6fa","#1d5fa8","#4aa8e8","Neos"],
   SXS:["#f4f6fa","#f2c200","#e2272e","SunExpress"], AEE:["#f4f6fa","#1d4fa8","#1d4fa8","Aegean"],
   EWG:["#f4f6fa","#b0136a","#b0136a","Eurowings"], LOT:["#f4f6fa","#1d3a8a","#e2272e","LOT"],
@@ -256,7 +258,7 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-// ===== GESTIONE METEO (Open-Meteo) =====
+// ===== GESTIONE METEO =====
 function setSkyTheme(type, isWindy) {
   const p = $("poster");
   p.dataset.weather = type;
@@ -329,7 +331,6 @@ async function fetchWeather() {
   }
 }
 
-// ===== CIELO E CICLO GIORNO/NOTTE =====
 function skyPhase(){
   const h=new Date().getHours()+new Date().getMinutes()/60;
   const m=new Date().getMonth();
@@ -349,7 +350,6 @@ function tick(){
   $("clock").textContent = "in diretta · " + new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
 }
 
-// ===== RISOLUZIONE NOME AEROPORTO =====
 function formatAirport(ap, code) {
   if (code && AIRPORTS[code]) return AIRPORTS[code];
   if (ap) {
@@ -364,15 +364,6 @@ function formatAirport(ap, code) {
   return code || "";
 }
 
-function routeOK(fr,a){
-  if(!fr||!fr.origin||!fr.destination)return false;
-  const o=fr.origin,d=fr.destination;
-  if(o.latitude==null||d.latitude==null)return true;
-  const od=dist(o.latitude,o.longitude,d.latitude,d.longitude);
-  const op=dist(o.latitude,o.longitude,a.lat,a.lon), pd=dist(a.lat,a.lon,d.latitude,d.longitude);
-  return op+pd<=od*1.15+80;
-}
-
 const routeCache={};
 async function getRoute(cs){
   if(!cs)return null;
@@ -384,26 +375,43 @@ async function getRoute(cs){
   }catch(e){return routeCache[cs]=null;}
 }
 
-// ===== RECUPERO FOTO REALE (Planespotters.net) =====
+// ===== RECUPERO FOTO REALE: prima Planespotters diretto, poi via Worker =====
 const photoCache={};
 async function getAircraftPhoto(hex){
-  if(!hex)return null;
-  if(hex in photoCache)return photoCache[hex];
-  try{
-    const r=await fetch(`${WORKER}/photo?hex=${hex}`);
-    if(!r.ok)return photoCache[hex]=null;
-    const j=await r.json();
-    if(j.photos && j.photos.length>0){
-      const p=j.photos[0];
-      return photoCache[hex]={
-        url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
-        photographer: p.photographer
-      };
+  if(!hex) return null;
+  if(hex in photoCache) return photoCache[hex];
+  
+  // 1. Prova diretta dal browser
+  try {
+    const r = await fetch(`https://api.planespotters.net/pub/photos/hex/${hex}`);
+    if (r.ok) {
+      const j = await r.json();
+      if (j.photos && j.photos.length > 0) {
+        const p = j.photos[0];
+        return photoCache[hex] = {
+          url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
+          photographer: p.photographer
+        };
+      }
     }
-    return photoCache[hex]=null;
-  }catch(e){
-    return photoCache[hex]=null;
-  }
+  } catch(e) {}
+
+  // 2. Fallback tramite Worker
+  try {
+    const r2 = await fetch(`${WORKER}/photo?hex=${hex}`);
+    if (r2.ok) {
+      const j2 = await r2.json();
+      if (j2.photos && j2.photos.length > 0) {
+        const p = j2.photos[0];
+        return photoCache[hex] = {
+          url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
+          photographer: p.photographer
+        };
+      }
+    }
+  } catch(e) {}
+
+  return photoCache[hex] = null;
 }
 
 let st1="", diagLine="";
@@ -453,14 +461,30 @@ function kindOf(a){
 async function render(a){
   current=a.hex;
   const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
-  let fr=await getRoute(cs);
-  if(!routeOK(fr,a))fr=null;
-  const liv=L[pre]||DEF, airline=(fr&&fr.airline&&fr.airline.name)||(L[pre]?L[pre][3]:"Volo");
-  const el=$("plane");
-  const trk=a.track??a.true_heading??0;
 
-  // Foto reale dell'aereo o livrea SVG se non trovata
-  const photo=await getAircraftPhoto(a.hex);
+  // PRIORITÀ TRATTA: Usiamo sempre prima le IATA live di Flightradar24
+  let origIata = a.orig_iata || "";
+  let destIata = a.dest_iata || "";
+  let o = null, d = null, fr = null;
+
+  // Solo se Flightradar24 non ha la tratta, interroghiamo adsbdb
+  if(!origIata || !destIata){
+    fr = await getRoute(cs);
+    if(fr && fr.origin && fr.destination){
+      o = fr.origin;
+      d = fr.destination;
+      if(!origIata) origIata = o.iata_code || "";
+      if(!destIata) destIata = d.iata_code || "";
+    }
+  }
+
+  const liv = L[pre] || DEF;
+  const airline = (L[pre] ? L[pre][3] : null) || (fr && fr.airline && fr.airline.name) || "Volo";
+  const el = $("plane");
+  const trk = a.track ?? a.true_heading ?? 0;
+
+  // 1. Foto reale
+  const photo = await getAircraftPhoto(a.hex);
   if(photo){
     el.classList.remove("flip");
     el.innerHTML=`
@@ -469,80 +493,81 @@ async function render(a){
         <span class="photo-credit">Foto: © ${photo.photographer} (Planespotters.net)</span>
       </div>`;
   }else{
-    el.innerHTML=planeSVG(kindOf(a),liv);
-    el.classList.toggle("flip",trk>180&&trk<360);
+    // Fallback sagoma SVG corretta
+    el.innerHTML = planeSVG(kindOf(a), liv);
+    el.classList.toggle("flip", trk > 180 && trk < 360);
   }
 
-  const o=fr&&fr.origin, d=fr&&fr.destination;
-  $("who").textContent=[airline,cs,NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
+  $("who").textContent = [airline, cs, NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
 
-  const origIata=(o&&o.iata_code)||a.orig_iata||"";
-  const destIata=(d&&d.iata_code)||a.dest_iata||"";
-
-  // Codici IATA in grande
+  // 2. Codici IATA grandi
   if(origIata && destIata){
-    $("route").innerHTML=`${origIata} <i>→</i> ${destIata}`;
-  }else if(fr){
-    const nm=x=>x?(x.iata_code||x.municipality):"?";
-    $("route").innerHTML=`${nm(o)} <i>→</i> ${nm(d)}`;
-  }else{
-    $("route").innerHTML=cs||"Volo in transito";
+    $("route").innerHTML = `${origIata} <i>→</i> ${destIata}`;
+  } else {
+    $("route").innerHTML = cs || "Volo in transito";
   }
 
-  // Nome degli aeroporti sotto ai codici IATA
-  const origName=formatAirport(o,origIata);
-  const destName=formatAirport(d,destIata);
+  // 3. Nome degli aeroporti sotto
+  const origName = formatAirport(o, origIata);
+  const destName = formatAirport(d, destIata);
   if(origName && destName){
-    $("airports").innerHTML=`${origName} <i>→</i> ${destName}`;
-    $("airports").style.display="block";
-  }else if(origName || destName){
-    $("airports").textContent=origName||destName;
-    $("airports").style.display="block";
-  }else{
-    $("airports").textContent="";
-    $("airports").style.display="none";
+    $("airports").innerHTML = `${origName} <i>→</i> ${destName}`;
+    $("airports").style.display = "block";
+  } else if(origName || destName){
+    $("airports").textContent = origName || destName;
+    $("airports").style.display = "block";
+  } else {
+    $("airports").textContent = "";
+    $("airports").style.display = "none";
   }
 
-  const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
-  const km=dist(HOME.lat,HOME.lon,a.lat,a.lon);
-  $("stats").innerHTML=`<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`;
-  $("arrow").style.transform=`rotate(${trk}deg)`;
+  // 4. Stato del volo
+  const vr = a.baro_rate ?? a.geom_rate ?? 0;
+  let st = vr > 250 ? "in salita" : (vr < -250 ? "in discesa" : "in quota");
+  // Se è sotto gli 8000ft vicino a Malpensa/Linate è in avvicinamento
+  if (a.alt_baro < 8000 && (destIata === "MXP" || destIata === "LIN" || destIata === "BGY")) {
+    st = vr < -100 ? "in atterraggio" : "in avvicinamento";
+  }
+
+  const km = dist(HOME.lat, HOME.lon, a.lat, a.lon);
+  $("stats").innerHTML = `<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`;
+  $("arrow").style.transform = `rotate(${trk}deg)`;
   $("poster").classList.remove("idle");
 }
 
 async function loop(){
-  const list=await fetchAircraft();
+  const list = await fetchAircraft();
   if(list){
-    const a=pick(list);
-    if(a)await render(a);
-    else{current=null;$("emptyTxt").textContent="Nessun aereo sopra di te";$("poster").classList.add("idle");}
-  }else if(!current){
-    $("emptyTxt").textContent="Non riesco a leggere i dati dei voli";
+    const a = pick(list);
+    if(a) await render(a);
+    else{ current = null; $("emptyTxt").textContent = "Nessun aereo sopra di te"; $("poster").classList.add("idle"); }
+  } else if(!current){
+    $("emptyTxt").textContent = "Non riesco a leggere i dati dei voli";
     $("poster").classList.add("idle");
   }
-  setTimeout(loop,POLL_MS);
+  setTimeout(loop, POLL_MS);
 }
 
 function toggleFS(){
-  const d=document, el=d.documentElement;
-  const on=d.fullscreenElement||d.webkitFullscreenElement;
+  const d = document, el = d.documentElement;
+  const on = d.fullscreenElement || d.webkitFullscreenElement;
   try{
-    if(on){(d.exitFullscreen||d.webkitExitFullscreen).call(d);}
-    else{const f=el.requestFullscreen||el.webkitRequestFullscreen; if(f)f.call(el,{navigationUI:"hide"});}
+    if(on){ (d.exitFullscreen||d.webkitExitFullscreen).call(d); }
+    else{ const f = el.requestFullscreen||el.webkitRequestFullscreen; if(f) f.call(el,{navigationUI:"hide"}); }
   }catch(e){}
 }
-document.addEventListener("click",toggleFS);
-document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
+document.addEventListener("click", toggleFS);
+document.addEventListener("keydown", e => { if(e.key === "f" || e.key === "F") toggleFS(); });
 
 buildSky();
 tick();
-setInterval(tick,30000);
+setInterval(tick, 30000);
 
 fetchWeather();
 setInterval(fetchWeather, 300000);
 
 loop();
-setTimeout(()=>{ runDiag(); setInterval(runDiag,60000); }, 2000);
+setTimeout(() => { runDiag(); setInterval(runDiag, 60000); }, 2000);
 </script>
 </body>
 </html>
