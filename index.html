@@ -24,7 +24,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .poster[data-t=dusk]{--sky1:#5b3d8f;--sky2:#ffa870;--cloud:#ffd9c299}
 .poster[data-t=night]{--sky1:#0b1534;--sky2:#2a3a78;--cloud:#8fa0d533}
 
-/* Sovrascrittura tonalità meteo */
+/* Sovrascrittura meteo */
 .poster[data-weather=cloudy]{--cloud:#cbd5e1bb}
 .poster[data-weather=rain]{--sky1:#2a3b5c;--sky2:#4a5f82;--cloud:#5b6a82dd}
 .poster[data-weather=storm]{--sky1:#111625;--sky2:#1f283d;--cloud:#2c3547ee}
@@ -50,7 +50,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .windy .cl{animation-duration:18s!important}
 
-/* Effetti Meteo (Pioggia, Neve, Fulmini) */
+/* Effetti Meteo */
 #weather-layer{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
 .drop{
   position:absolute;width:.15cqw;height:2.6cqh;background:linear-gradient(transparent,#ffffffcc);
@@ -77,7 +77,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   94%{opacity:.6}
 }
 
-/* Titolo e Testata */
+/* Titolo e Barra Live */
 .top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95;z-index:5}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
 .live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
@@ -85,7 +85,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes pulse{50%{opacity:.25}}
 .weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* Aereo centrato sia in X che in Y */
+/* Aereo centrato in X e Y */
 #stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:4}
 #plane{width:68cqw;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
 #plane.flip{transform:scaleX(-1)}
@@ -96,13 +96,15 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
 
-/* Scheda Info Volo */
-.info{position:absolute;left:0;right:0;bottom:0;height:34cqh;padding:0 4cqw 4cqh;display:flex;flex-direction:column;justify-content:flex-end;
-  background:linear-gradient(#0000,#0b1020cc 40%);z-index:5;pointer-events:none}
-.poster[data-t=day] .info{background:linear-gradient(#0000,#0b2a5acc 40%)}
-.who{font-size:1.9cqw;font-weight:400;opacity:.9}
-.route{font-size:7.4cqw;font-weight:700;line-height:1.05;letter-spacing:-.02em;white-space:nowrap}
+/* Sezione Informazioni Volo */
+.info{position:absolute;left:0;right:0;bottom:0;min-height:34cqh;padding:0 4cqw 3.5cqh;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(#0000,#0b1020dd 50%);z-index:5;pointer-events:none}
+.poster[data-t=day] .info{background:linear-gradient(#0000,#0b2a5add 50%)}
+.who{font-size:1.8cqw;font-weight:400;opacity:.9}
+.route{font-size:6.4cqw;font-weight:700;line-height:1.02;letter-spacing:-.02em;white-space:nowrap}
 .route i{font-style:normal;color:#ffd93b;padding:0 1.2cqw}
+.airports{font-size:1.7cqw;font-weight:500;opacity:.88;margin-top:.4cqh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.airports i{font-style:normal;color:#ffd93b;padding:0 .8cqw;opacity:.75}
 .stats{display:flex;gap:3.2cqw;font-size:2cqw;font-weight:600;margin-top:1cqh}
 .stats span{font-weight:400;opacity:.75;font-size:1.5cqw;margin-left:.4cqw}
 
@@ -111,7 +113,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .compass b{position:absolute;top:-2cqw;font-weight:600}
 .compass svg{width:3.6cqw;transition:transform 1s}
 
-/* Diagnostica in basso a destra */
+/* Diagnostica in basso a destra sotto alla bussola */
 #status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:50cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:5}
 #status .bad{color:#ff8a80;font-weight:600}
 #status .good{color:#9be59b;font-weight:600}
@@ -141,6 +143,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   <div class="info">
     <div class="who" id="who"></div>
     <div class="route" id="route"></div>
+    <div class="airports" id="airports"></div>
     <div class="stats" id="stats"></div>
   </div>
   <div class="compass"><b>N</b>
@@ -155,6 +158,27 @@ const HOME = {lat:45.3158, lon:8.8573};   // Vigevano
 const RADIUS_NM = 20;
 const POLL_MS = 6000;
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
+
+// ===== DIZIONARIO AEROPORTI PRINCIPALI =====
+const AIRPORTS = {
+  MXP:"Milano Malpensa", LIN:"Milano Linate", BGY:"Bergamo Orio al Serio", TRN:"Torino Caselle",
+  GOA:"Genova", VRN:"Verona", VCE:"Venezia Marco Polo", TSF:"Treviso", BLQ:"Bologna",
+  PSA:"Pisa", FLR:"Firenze", FCO:"Roma Fiumicino", CIA:"Roma Ciampino", NAP:"Napoli Capodichino",
+  BRI:"Bari", BDS:"Brindisi", PMO:"Palermo", CTA:"Catania", CAG:"Cagliari", OLB:"Olbia",
+  AHO:"Alghero", SUF:"Lamezia Terme", REG:"Reggio Calabria", TRS:"Trieste",
+  CDG:"Parigi Charles de Gaulle", ORY:"Parigi Orly", BVA:"Parigi Beauvais", NCE:"Nizza",
+  LYS:"Lione", MRS:"Marsiglia", LHR:"Londra Heathrow", LGW:"Londra Gatwick", STN:"Londra Stansted",
+  LTN:"Londra Luton", MAN:"Manchester", EDI:"Edimburgo", FRA:"Francoforte", MUC:"Monaco di Baviera",
+  BER:"Berlino", DUS:"Düsseldorf", HAM:"Amburgo", CGN:"Colonia", AMS:"Amsterdam Schiphol",
+  BRU:"Bruxelles", CRL:"Bruxelles Charleroi", ZRH:"Zurigo", GVA:"Ginevra", BSL:"Basilea",
+  VIE:"Vienna", MAD:"Madrid Barajas", BCN:"Barcellona El Prat", VLC:"Valencia", AGP:"Malaga",
+  PMI:"Palma di Maiorca", IBZ:"Ibiza", SVQ:"Siviglia", ALC:"Alicante", LIS:"Lisbona", OPO:"Porto",
+  ATH:"Atene", HER:"Creta Heraklion", SKG:"Salonicco", IST:"Istanbul", SAW:"Istanbul Sabiha",
+  WAW:"Varsavia", KRK:"Cracovia", PRG:"Praga", BUD:"Budapest", DUB:"Dublino",
+  JFK:"New York JFK", EWR:"New York Newark", MIA:"Miami", ORD:"Chicago", LAX:"Los Angeles",
+  BOS:"Boston", ATL:"Atlanta", DXB:"Dubai", AUH:"Abu Dhabi", DOH:"Doha", CAI:"Il Cairo",
+  CMN:"Casablanca", TUN:"Tunisi", NRT:"Tokyo Narita", HND:"Tokyo Haneda", SIN:"Singapore"
+};
 
 // ===== LIVREE COMPAGNIE =====
 const L = {
@@ -219,20 +243,16 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-// ===== GESTIONE METEO (Open-Meteo ECMWF/DWD) =====
-let currentWeather = { type: "clear", temp: null, wind: 0, code: 0 };
-
+// ===== GESTIONE METEO (Open-Meteo) =====
 function setSkyTheme(type, isWindy) {
   const p = $("poster");
   p.dataset.weather = type;
   p.classList.toggle("windy", isWindy);
   p.classList.toggle("storm", type === "storm");
 
-  // Inclinazione pioggia/neve secondo il vento
   const drift = isWindy ? "-65px" : "-20px";
   document.documentElement.style.setProperty("--w-drift", drift);
 
-  // Generazione particelle meteo
   const wLayer = $("weather-layer");
   wLayer.innerHTML = "";
   if (type === "rain" || type === "storm") {
@@ -275,10 +295,7 @@ async function fetchWeather() {
     const temp = Math.round(c.temperature_2m);
     const isWindy = wind >= 28 || gusts >= 38;
 
-    let type = "clear";
-    let desc = "Sereno";
-
-    // Decodifica standard codici WMO
+    let type = "clear", desc = "Sereno";
     if (code === 0) { type = "clear"; desc = "Sereno"; }
     else if (code >= 1 && code <= 2) { type = "clear"; desc = "Poco nuvoloso"; }
     else if (code === 3) { type = "cloudy"; desc = "Coperto"; }
@@ -292,8 +309,6 @@ async function fetchWeather() {
     }
 
     if (isWindy) desc += " · Vento";
-
-    currentWeather = { type, temp, wind, code };
     $("weather-desc").textContent = `${temp}°C · ${desc}`;
     setSkyTheme(type, isWindy);
   } catch (e) {
@@ -321,7 +336,21 @@ function tick(){
   $("clock").textContent = "in diretta · " + new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});
 }
 
-// ===== TRATTE E VOLI =====
+// ===== RISOLUZIONE NOME AEROPORTO =====
+function formatAirport(ap, code) {
+  if (code && AIRPORTS[code]) return AIRPORTS[code];
+  if (ap) {
+    const city = ap.municipality || "";
+    let name = ap.name || "";
+    name = name.replace(/\b(International Airport|Intercontinental Airport|Airport|Aeroporto Internazionale|Aeroporto di|Aeroporto)\b/gi, "").trim();
+    if (city && name && !name.toLowerCase().includes(city.toLowerCase())) {
+      return `${city} (${name})`;
+    }
+    return name || city || ap.iata_code || code || "";
+  }
+  return code || "";
+}
+
 function routeOK(fr,a){
   if(!fr||!fr.origin||!fr.destination)return false;
   const o=fr.origin,d=fr.destination;
@@ -396,16 +425,35 @@ async function render(a){
   el.innerHTML=planeSVG(kindOf(a),liv);
   const trk=a.track??a.true_heading??0;
   el.classList.toggle("flip",trk>180&&trk<360);
+
   const o=fr&&fr.origin, d=fr&&fr.destination;
   $("who").textContent=[airline,cs,NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
-  const nm=x=>x?(x.iata_code||x.municipality):"?";
 
-  if(fr){
+  const origIata = (o&&o.iata_code) || a.orig_iata || "";
+  const destIata = (d&&d.iata_code) || a.dest_iata || "";
+
+  // 1. Mostra i codici IATA grandi (es. MXP → JFK)
+  if(origIata && destIata){
+    $("route").innerHTML=`${origIata} <i>→</i> ${destIata}`;
+  }else if(fr){
+    const nm=x=>x?(x.iata_code||x.municipality):"?";
     $("route").innerHTML=`${nm(o)} <i>→</i> ${nm(d)}`;
-  }else if(a.orig_iata&&a.dest_iata){
-    $("route").innerHTML=`${a.orig_iata} <i>→</i> ${a.dest_iata}`;
   }else{
     $("route").innerHTML=cs||"Volo in transito";
+  }
+
+  // 2. Mostra i nomi completi degli aeroporti subito sotto
+  const origName = formatAirport(o, origIata);
+  const destName = formatAirport(d, destIata);
+  if(origName && destName){
+    $("airports").innerHTML=`${origName} <i>→</i> ${destName}`;
+    $("airports").style.display = "block";
+  }else if(origName || destName){
+    $("airports").textContent = origName || destName;
+    $("airports").style.display = "block";
+  }else{
+    $("airports").textContent = "";
+    $("airports").style.display = "none";
   }
 
   const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
@@ -443,7 +491,6 @@ buildSky();
 tick();
 setInterval(tick,30000);
 
-// Polling meteo ogni 5 minuti
 fetchWeather();
 setInterval(fetchWeather, 300000);
 
