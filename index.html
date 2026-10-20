@@ -85,7 +85,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 const HOME = {lat:45.3158, lon:8.8573};   // Vigevano (centro)
 const RADIUS_NM = 20;                      // raggio di ricerca in miglia nautiche
 const POLL_MS = 8000;
-const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");   // indirizzo del tuo Cloudflare Worker, es. "https://aerei.tuonome.workers.dev" (vedi istruzioni)
+const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
 const APIS = [
   (la,lo,d)=>`https://api.adsb.lol/v2/point/${la}/${lo}/${d}`,
   (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`,
@@ -167,7 +167,6 @@ function buildSky(){
 function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in diretta · "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
 
 // ===== DATI VOLO =====
-// Le API rispondono dal browser ma senza permesso CORS per le pagine web: provo diretto, poi via proxy CORS pubblici
 const PROX=[u=>u,u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
 const VIA=["diretto","proxy 1","proxy 2"]; let via=0;
 async function getJSON(url){
@@ -178,7 +177,6 @@ async function getJSON(url){
   }
   throw last;
 }
-// la tratta si ricava dal callsign e le compagnie lo riutilizzano su più voli: la scarto se l'aereo non è davvero tra origine e destinazione
 function routeOK(fr,a){
   if(!fr||!fr.origin||!fr.destination)return false;
   const o=fr.origin,d=fr.destination;
@@ -193,8 +191,9 @@ async function getRoute(cs){
   try{const j=WORKER?await (await fetch(`${WORKER}/route?cs=${cs}`)).json():await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
+
 // ===== MINILOG: stato di ogni fonte =====
-const SRC_NAMES=["adsb.lol","adsb.one","airplanes.live","adsb.fi"];
+const SRC_NAMES=["adsb.lol","flightradar24","opensky","adsb.fi"];
 let st1="", diagLine="";
 function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
 function setSt(t){st1=t;paint();}
@@ -209,21 +208,25 @@ async function runDiag(){
   paint();
 }
 async function fetchAircraft(){
+  let workerErr = "";
   if(WORKER){
     try{
       const r=await fetch(`${WORKER}/ac?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}&dist=${RADIUS_NM}`);
       const j=await r.json();
       if(!r.ok)throw new Error((j.errs&&j.errs.join(" | "))||j.error||"HTTP "+r.status);
-      setSt(`worker ✓ · in uso: ${SRC_NAMES[j.src]} · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · saltate: ${j.errs.join(" | ")}`:""));
+      const srcLabel = j.srcName || SRC_NAMES[j.src] || "worker";
+      setSt(`<span class="good">worker ✓</span> · in uso: <b>${srcLabel}</b> · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · saltate: ${j.errs.join(" | ")}`:""));
       return j.ac;
-    }catch(e){setSt(`<span class="bad">worker ✗ ${e.message}</span>`);return null;}
+    }catch(e){
+      workerErr = `worker ✗ (${e.message}) → fallback browser · `;
+    }
   }
-  // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
+  // Fallback automatico lato browser se il worker non è configurato o fallisce
   const res=await Promise.allSettled(APIS.map(f=>getJSON(f(HOME.lat,HOME.lon,RADIUS_NM))));
   const map=new Map(); let ok=0, errs=[];
   res.forEach(r=>{if(r.status!=="fulfilled")errs.push(String(r.reason&&r.reason.message||r.reason));
     if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
-  setSt(`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":""));
+  setSt(workerErr+`fonti browser ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:""));
   return ok?[...map.values()]:null;
 }
 let current=null;
@@ -247,8 +250,13 @@ async function render(a){
   const o=fr&&fr.origin, d=fr&&fr.destination;
   $("who").textContent=[airline,cs,NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
   const nm=x=>x?(x.iata_code||x.municipality):"?";
-  const name=x=>x?(x.municipality||x.iata_code):"";
-  $("route").innerHTML=fr?`${nm(o)} <i>→</i> ${nm(d)}`:(cs||"Volo in transito");
+  if(fr){
+    $("route").innerHTML=`${nm(o)} <i>→</i> ${nm(d)}`;
+  }else if(a.orig_iata&&a.dest_iata){
+    $("route").innerHTML=`${a.orig_iata} <i>→</i> ${a.dest_iata}`;
+  }else{
+    $("route").innerHTML=cs||"Volo in transito";
+  }
   const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
   const km=dist(HOME.lat,HOME.lon,a.lat,a.lon);
   $("stats").innerHTML=`<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`;
@@ -273,7 +281,9 @@ function toggleFS(){
 document.addEventListener("click",toggleFS);
 document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
 
-buildSky(); tick(); setInterval(tick,30000); runDiag(); setInterval(runDiag,60000); loop();
+buildSky(); tick(); setInterval(tick,30000); loop();
+// Avvia la diagnostica dopo 3 secondi per non fare chiamate doppie all'avvio
+setTimeout(()=>{ runDiag(); setInterval(runDiag,60000); }, 3000);
 </script>
 </body>
 </html>
