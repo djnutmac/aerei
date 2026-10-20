@@ -31,7 +31,8 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
-#status{position:absolute;left:4cqw;top:13.5cqh;font-size:1.1cqw;opacity:.55}
+#status{position:absolute;left:4cqw;top:13.5cqh;max-width:72cqw;font-size:1.1cqw;line-height:1.45;opacity:.7}
+#status .bad{color:#ff8a80;font-weight:600}#status .good{color:#9be59b}
 .live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
 .dot{width:1.1cqw;height:1.1cqw;border-radius:50%;background:#ff4b4b;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.25}}
@@ -192,22 +193,37 @@ async function getRoute(cs){
   try{const j=WORKER?await (await fetch(`${WORKER}/route?cs=${cs}`)).json():await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
+// ===== MINILOG: stato di ogni fonte =====
+const SRC_NAMES=["adsb.lol","airplanes.live","adsb.fi"];
+let st1="", diagLine="";
+function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
+function setSt(t){st1=t;paint();}
+async function runDiag(){
+  if(!WORKER)return;
+  try{
+    const r=await fetch(`${WORKER}/diag?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}`);
+    const j=await r.json();
+    diagLine=j.map(x=>x.ok?`<span class="good">${x.name} ✓${x.n!=null?" "+x.n+" aerei":""} ${x.ms}ms</span>`
+      :`<span class="bad">${x.name} ✗ ${x.status?"HTTP "+x.status:(x.err||"errore")}</span>`).join(" · ");
+  }catch(e){diagLine=`<span class="bad">diagnostica non raggiungibile: ${e.message}</span>`;}
+  paint();
+}
 async function fetchAircraft(){
   if(WORKER){
     try{
       const r=await fetch(`${WORKER}/ac?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}&dist=${RADIUS_NM}`);
       const j=await r.json();
       if(!r.ok)throw new Error((j.errs&&j.errs.join(" | "))||j.error||"HTTP "+r.status);
-      $("status").textContent=`worker · fonte ${j.src+1}/${APIS.length} · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · ${j.errs[0]}`:"");
+      setSt(`worker ✓ · in uso: ${SRC_NAMES[j.src]} · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · saltate: ${j.errs.join(" | ")}`:""));
       return j.ac;
-    }catch(e){$("status").textContent="worker · errore: "+e.message;return null;}
+    }catch(e){setSt(`<span class="bad">worker ✗ ${e.message}</span>`);return null;}
   }
   // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
   const res=await Promise.allSettled(APIS.map(f=>getJSON(f(HOME.lat,HOME.lon,RADIUS_NM))));
   const map=new Map(); let ok=0, errs=[];
   res.forEach(r=>{if(r.status!=="fulfilled")errs.push(String(r.reason&&r.reason.message||r.reason));
     if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
-  $("status").textContent=`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":"");
+  setSt(`fonti ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:"")+(location.protocol==="file:"?" · aperto da file locale":""));
   return ok?[...map.values()]:null;
 }
 let current=null;
@@ -257,7 +273,7 @@ function toggleFS(){
 document.addEventListener("click",toggleFS);
 document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
 
-buildSky(); tick(); setInterval(tick,30000); loop();
+buildSky(); tick(); setInterval(tick,30000); runDiag(); setInterval(runDiag,60000); loop();
 </script>
 </body>
 </html>
