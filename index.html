@@ -35,7 +35,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .star{position:absolute;width:.25cqw;height:.25cqw;background:#fff;border-radius:50%;animation:tw 3s infinite alternate}
 @keyframes tw{to{opacity:.2}}
 
-/* Sole / Luna posizionati a sinistra del radar */
+/* Sole / Luna */
 .orb{position:absolute;right:18.5cqw;top:6cqh;width:8.5cqw;height:8.5cqw;border-radius:50%;transition:all 2s;z-index:1}
 .poster[data-t=day] .orb{background:#ffd93b;box-shadow:0 0 0 1.2cqw #ffd93b55,0 0 0 2.6cqw #ffd93b33}
 .poster[data-t=dusk] .orb{background:#ff7a45;box-shadow:0 0 0 1.2cqw #ff7a4555;top:28cqh}
@@ -86,7 +86,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes pulse{50%{opacity:.25}}
 .weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* RADAR IN ALTO A DESTRA */
+/* RADAR CIRCOLARE SU VIGEVANO */
 .radar-box{
   position:absolute;right:3.2cqw;top:3.2cqh;width:13cqw;height:13cqw;border-radius:50%;
   background:radial-gradient(circle, #08172ee6 0%, #030814f8 100%);
@@ -110,7 +110,6 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 .5cqw #38bdf8;z-index:3;
 }
 .radar-n{position:absolute;top:.3cqh;left:50%;transform:translateX(-50%);font-size:.7cqw;font-weight:700;color:#ff5a4d;z-index:4}
-.radar-tag{position:absolute;bottom:.5cqh;left:50%;transform:translateX(-50%);font-size:.68cqw;font-weight:600;color:#ffffffaa;letter-spacing:.05em;z-index:4}
 #radar-targets{position:absolute;inset:0;z-index:5}
 .radar-ac{position:absolute;transform:translate(-50%,-50%);display:grid;place-items:center}
 .radar-ping{
@@ -187,7 +186,6 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
     <div class="radar-axis-v"></div>
     <div class="radar-n">N</div>
     <div class="radar-home" title="Vigevano"></div>
-    <div class="radar-tag">30 km</div>
     <div id="radar-targets"></div>
   </div>
 
@@ -208,7 +206,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 // ===== CONFIGURAZIONE =====
 const HOME = {lat:45.3158, lon:8.8573};   // Vigevano
 const RADIUS_NM = 20;
-const POLL_MS = 6000;
+const POLL_MS = 2000;                     // Polling aerei ogni 2 secondi
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
 
 // ===== DIZIONARIO AEROPORTI PRINCIPALI =====
@@ -319,7 +317,7 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-// ===== RADAR RENDERING (30 KM CENTRATO SU VIGEVANO) =====
+// ===== RADAR CIRCOLARE (30 KM SU VIGEVANO) =====
 function updateRadar(aircraftList, activeHex) {
   const MAX_KM = 30;
   const container = $("radar-targets");
@@ -333,7 +331,6 @@ function updateRadar(aircraftList, activeHex) {
     const distKm = Math.hypot(dLat, dLon);
     if (distKm > MAX_KM) return;
 
-    // Normalizzazione coordinate percentuale (50% = centro Vigevano)
     const xPct = 50 + (dLon / MAX_KM) * 47;
     const yPct = 50 - (dLat / MAX_KM) * 47;
     const isCurrent = (a.hex === activeHex);
@@ -519,7 +516,7 @@ async function render(a){
   current=a.hex;
   const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
 
-  // Aggiorna subito il radar per colorare di rosso questo aereo
+  // Aggiorna radar evidenziando l'aereo corrente in rosso
   updateRadar(lastList, current);
 
   // PRIORITÀ TRATTA: Flightradar24 in diretta
@@ -554,7 +551,7 @@ async function render(a){
     $("route").innerHTML = cs || "Volo in transito";
   }
 
-  // Nome degli aeroporti sotto ai codici
+  // Nome aeroporti sotto
   const origName = formatAirport(o, origIata);
   const destName = formatAirport(d, destIata);
   if(origName && destName){
@@ -617,11 +614,12 @@ buildSky();
 tick();
 setInterval(tick, 30000);
 
+// Meteo ogni 5 minuti (Open-Meteo)
 fetchWeather();
 setInterval(fetchWeather, 300000);
 
 loop();
-setTimeout(() => { runDiag(); setInterval(runDiag, 60000); }, 2000);
+setTimeout(() => { runDiag(); setInterval(runDiag, 180000); }, 2000);
 </script>
 </body>
 </html>
