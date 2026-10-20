@@ -31,8 +31,8 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
-#status{position:absolute;left:4cqw;bottom:1.6cqh;font-size:1.1cqw;opacity:.55}
-.live{position:absolute;right:4cqw;bottom:4.4cqh;display:flex;gap:.8cqw;align-items:center;font-size:1.5cqw}
+#status{position:absolute;left:4cqw;top:13.5cqh;font-size:1.1cqw;opacity:.55}
+.live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
 .dot{width:1.1cqw;height:1.1cqw;border-radius:50%;background:#ff4b4b;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.25}}
 #stage{position:absolute;left:0;right:0;top:12cqh;height:46cqh;display:grid;place-items:center}
@@ -65,7 +65,8 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   <div class="stars" id="stars"></div>
   <div class="orb"></div>
   <div id="clouds"></div>
-  <div class="top">Il cielo sopra Vigevano<small>via Brigate Partigiane 7 · discesa verso Malpensa</small></div>
+  <div class="top">Il cielo sopra Vigevano
+    <div class="live"><div class="dot"></div><span id="clock"></span></div></div>
   <div id="stage"><div id="plane"></div></div>
   <div class="info">
     <div class="who" id="who"></div>
@@ -75,16 +76,15 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   <div class="compass"><b>N</b>
     <svg id="arrow" viewBox="0 0 20 20"><path d="M10 1 L16 18 L10 14 L4 18Z" fill="#ff5a4d"/></svg></div>
   <div id="status"></div>
-  <div class="live"><div class="dot"></div><span id="clock"></span></div>
   <div id="empty"><div><span id="emptyTxt">Cerco aerei sopra di te…</span><small>Resto in ascolto: appena ne passa uno lo disegno.</small></div></div>
 </div>
 
 <script>
 // ===== CONFIGURAZIONE =====
-const HOME = {lat:45.3158, lon:8.8573};   // Vigevano, via Brigate Partigiane 7 (ritocca se vuoi)
+const HOME = {lat:45.3158, lon:8.8573};   // Vigevano (centro)
 const RADIUS_NM = 20;                      // raggio di ricerca in miglia nautiche
 const POLL_MS = 8000;
-const WORKER = "https://aerei.djnutmac.workers.dev/";   // indirizzo del tuo Cloudflare Worker, es. "https://aerei.tuonome.workers.dev" (vedi istruzioni)
+const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");   // indirizzo del tuo Cloudflare Worker, es. "https://aerei.tuonome.workers.dev" (vedi istruzioni)
 const APIS = [
   (la,lo,d)=>`https://api.adsb.lol/v2/point/${la}/${lo}/${d}`,
   (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`,
@@ -107,7 +107,12 @@ const L = {
   AAL:["#c8ccd2","#0c3b7a","#d71920","American"], ELY:["#f4f6fa","#0a3b8e","#0a3b8e","El Al"],
   CLX:["#f4f6fa","#e8c200","#e8c200","Cargolux"], FDX:["#f4f6fa","#4d148c","#ff6200","FedEx"],
   UPS:["#6b4a2b","#6b4a2b","#ffc72c","UPS"], DHX:["#ffcc00","#ffcc00","#d40511","DHL"],
-  GEC:["#f4f6fa","#ffcc00","#d40511","Lufthansa Cargo"]
+  GEC:["#f4f6fa","#ffcc00","#d40511","Lufthansa Cargo"],
+  PGT:["#f4f6fa","#f2c200","#d3202a","Pegasus Airlines"], NOS:["#f4f6fa","#1d5fa8","#4aa8e8","Neos"],
+  SXS:["#f4f6fa","#f2c200","#e2272e","SunExpress"], AEE:["#f4f6fa","#1d4fa8","#1d4fa8","Aegean"],
+  EWG:["#f4f6fa","#b0136a","#b0136a","Eurowings"], LOT:["#f4f6fa","#1d3a8a","#e2272e","LOT"],
+  TRA:["#f4f6fa","#2fb34a","#2fb34a","Transavia"], TVF:["#f4f6fa","#2fb34a","#2fb34a","Transavia France"],
+  BEL:["#f4f6fa","#1d3a8a","#e2272e","Brussels Airlines"], VOE:["#f4f6fa","#d7192d","#d7192d","Volotea"]
 };
 const DEF = ["#f4f6fa","#5f7fa8","#e2b03a","Volo"];
 
@@ -164,7 +169,6 @@ function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in dire
 // Le API rispondono dal browser ma senza permesso CORS per le pagine web: provo diretto, poi via proxy CORS pubblici
 const PROX=[u=>u,u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
 const VIA=["diretto","proxy 1","proxy 2"]; let via=0;
-if(WORKER){PROX.unshift(u=>WORKER+"?url="+encodeURIComponent(u));VIA.unshift("worker");}
 async function getJSON(url){
   let last;
   for(let k=0;k<PROX.length;k++){const i=(via+k)%PROX.length;
@@ -173,13 +177,31 @@ async function getJSON(url){
   }
   throw last;
 }
+// la tratta si ricava dal callsign e le compagnie lo riutilizzano su più voli: la scarto se l'aereo non è davvero tra origine e destinazione
+function routeOK(fr,a){
+  if(!fr||!fr.origin||!fr.destination)return false;
+  const o=fr.origin,d=fr.destination;
+  if(o.latitude==null||d.latitude==null)return true;
+  const od=dist(o.latitude,o.longitude,d.latitude,d.longitude);
+  const op=dist(o.latitude,o.longitude,a.lat,a.lon), pd=dist(a.lat,a.lon,d.latitude,d.longitude);
+  return op+pd<=od*1.15+80;
+}
 const routeCache={};
 async function getRoute(cs){
   if(!cs)return null; if(cs in routeCache)return routeCache[cs];
-  try{const j=await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
+  try{const j=WORKER?await (await fetch(`${WORKER}/route?cs=${cs}`)).json():await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
 async function fetchAircraft(){
+  if(WORKER){
+    try{
+      const r=await fetch(`${WORKER}/ac?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}&dist=${RADIUS_NM}`);
+      const j=await r.json();
+      if(!r.ok)throw new Error((j.errs&&j.errs.join(" | "))||j.error||"HTTP "+r.status);
+      $("status").textContent=`worker · fonte ${j.src+1}/${APIS.length} · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · ${j.errs[0]}`:"");
+      return j.ac;
+    }catch(e){$("status").textContent="worker · errore: "+e.message;return null;}
+  }
   // interrogo tutte le fonti insieme e unisco i risultati (ognuna ha la sua copertura)
   const res=await Promise.allSettled(APIS.map(f=>getJSON(f(HOME.lat,HOME.lon,RADIUS_NM))));
   const map=new Map(); let ok=0, errs=[];
@@ -201,7 +223,8 @@ function kindOf(a){const t=a.t||""; if(WIDE.includes(t)||a.category==="A5")retur
   if(PROP.includes(t)||a.category==="A1"||a.category==="A7")return"prop"; return"narrow";}
 async function render(a){
   current=a.hex;
-  const cs=(a.flight||"").trim(), pre=cs.slice(0,3), fr=await getRoute(cs);
+  const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
+  let fr=await getRoute(cs); if(!routeOK(fr,a))fr=null;
   const liv=L[pre]||DEF, airline=(fr&&fr.airline&&fr.airline.name)||(L[pre]?L[pre][3]:"Volo");
   const el=$("plane"); el.innerHTML=planeSVG(kindOf(a),liv);
   const trk=a.track??a.true_heading??0; el.classList.toggle("flip",trk>180&&trk<360);
@@ -212,7 +235,7 @@ async function render(a){
   $("route").innerHTML=fr?`${nm(o)} <i>→</i> ${nm(d)}`:(cs||"Volo in transito");
   const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
   const km=dist(HOME.lat,HOME.lon,a.lat,a.lon);
-  $("stats").innerHTML=`<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`+(fr?`<div style="margin-left:auto;font-weight:400;font-size:1.6cqw;opacity:.85">${name(o)} → ${name(d)}</div>`:"");
+  $("stats").innerHTML=`<div>${Math.round(a.alt_baro*0.3048)}<span>m</span></div><div>${Math.round((a.gs||0)*1.852)}<span>km/h</span></div><div>${st}</div><div>${km.toFixed(1)}<span>km da te</span></div>`;
   $("arrow").style.transform=`rotate(${trk}deg)`;
   $("poster").classList.remove("idle");
 }
