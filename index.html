@@ -84,6 +84,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 const HOME = {lat:45.3158, lon:8.8573};   // Vigevano, via Brigate Partigiane 7 (ritocca se vuoi)
 const RADIUS_NM = 20;                      // raggio di ricerca in miglia nautiche
 const POLL_MS = 8000;
+const WORKER = "https://aerei.djnutmac.workers.dev/";   // indirizzo del tuo Cloudflare Worker, es. "https://aerei.tuonome.workers.dev" (vedi istruzioni)
 const APIS = [
   (la,lo,d)=>`https://api.adsb.lol/v2/point/${la}/${lo}/${d}`,
   (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`,
@@ -163,6 +164,7 @@ function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in dire
 // Le API rispondono dal browser ma senza permesso CORS per le pagine web: provo diretto, poi via proxy CORS pubblici
 const PROX=[u=>u,u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
 const VIA=["diretto","proxy 1","proxy 2"]; let via=0;
+if(WORKER){PROX.unshift(u=>WORKER+"?url="+encodeURIComponent(u));VIA.unshift("worker");}
 async function getJSON(url){
   let last;
   for(let k=0;k<PROX.length;k++){const i=(via+k)%PROX.length;
