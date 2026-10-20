@@ -19,7 +19,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s;
 }
 
-/* Fasi di luce */
+/* Fasi di luce solare */
 .poster[data-t=day]{--sky1:#4aa8f0;--sky2:#bfe6ff;--cloud:#ffffffcc}
 .poster[data-t=dusk]{--sky1:#5b3d8f;--sky2:#ffa870;--cloud:#ffd9c299}
 .poster[data-t=night]{--sky1:#0b1534;--sky2:#2a3a78;--cloud:#8fa0d533}
@@ -85,29 +85,18 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes pulse{50%{opacity:.25}}
 .weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* Aereo centrato in X e Y */
+/* Aereo al centro esatto (X e Y) */
 #stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:4}
-#plane{width:68cqw;display:flex;justify-content:center;align-items:center}
-#plane svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
-#plane.flip svg{transform:scaleX(-1)}
+#plane{width:68cqw;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
+#plane.flip{transform:scaleX(-1)}
+#plane svg{width:100%;display:block;overflow:visible}
 @keyframes bob{50%{translate:0 -1.6cqh;rotate:-1.2deg}}
 .windy #plane{animation:bob 2.8s ease-in-out infinite, turb 0.4s ease-in-out infinite alternate}
 @keyframes turb{from{translate:0 -.3cqh}to{translate:0 .3cqh}}
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
 
-/* Foto reale dell'aereo */
-#real-photo-wrap{
-  position:relative;max-width:64cqw;max-height:42cqh;display:flex;flex-direction:column;align-items:center;
-  animation:bob 4.5s ease-in-out infinite;pointer-events:auto;
-}
-#real-photo{
-  max-width:100%;max-height:36cqh;border-radius:1.2cqw;box-shadow:0 1.2cqh 2.4cqh #00000088;
-  object-fit:contain;border:.2cqw solid #ffffff33;
-}
-.photo-credit{font-size:.85cqw;opacity:.75;margin-top:.6cqh;text-shadow:0 1px 3px #000}
-
-/* Info volo */
+/* Sezione dati volo */
 .info{
   position:absolute;left:0;right:0;bottom:0;min-height:34cqh;padding:0 4cqw 3.5cqh;display:flex;flex-direction:column;justify-content:flex-end;
   background:linear-gradient(#0000,#0b1020dd 50%);z-index:5;pointer-events:none;
@@ -126,7 +115,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .compass b{position:absolute;top:-2cqw;font-weight:600}
 .compass svg{width:3.6cqw;transition:transform 1s}
 
-/* Diagnostica in basso a destra */
+/* Diagnostica in basso a destra sotto alla bussola */
 #status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:50cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:5}
 #status .bad{color:#ff8a80;font-weight:600}
 #status .good{color:#9be59b;font-weight:600}
@@ -172,7 +161,7 @@ const RADIUS_NM = 20;
 const POLL_MS = 6000;
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
 
-// ===== DIZIONARIO AEROPORTI =====
+// ===== DIZIONARIO AEROPORTI PRINCIPALI =====
 const AIRPORTS = {
   MXP:"Milano Malpensa", LIN:"Milano Linate", BGY:"Bergamo Orio al Serio", TRN:"Torino Caselle",
   GOA:"Genova", VRN:"Verona", VCE:"Venezia Marco Polo", TSF:"Treviso", BLQ:"Bologna",
@@ -188,35 +177,57 @@ const AIRPORTS = {
   AGP:"Malaga", PMI:"Palma di Maiorca", IBZ:"Ibiza", SVQ:"Siviglia", ALC:"Alicante",
   LIS:"Lisbona", OPO:"Porto", ATH:"Atene", HER:"Creta", SKG:"Salonicco", IST:"Istanbul",
   SAW:"Istanbul Sabiha", WAW:"Varsavia", KRK:"Cracovia", PRG:"Praga", BUD:"Budapest", DUB:"Dublino",
+  BOJ:"Burgas", VAR:"Varna", SOF:"Sofia",
   JFK:"New York JFK", EWR:"New York Newark", MIA:"Miami", ORD:"Chicago", LAX:"Los Angeles",
   DXB:"Dubai", AUH:"Abu Dhabi", DOH:"Doha", CAI:"Il Cairo", CMN:"Casablanca", TUN:"Tunisi"
 };
 
-// ===== LIVREE COMPAGNIE (include Jet2, EasyJet, Ryanair, Wizz, Neos, ecc) =====
+// ===== LIVREE COMPAGNIE (fusoliera, coda, accento, nome) =====
 const L = {
-  EXS:["#f4f6fa","#cf142b","#002b66","Jet2.com"],
-  ITY:["#f4f6fa","#1f4aa8","#1fa35b","ITA Airways"], RYR:["#f4f6fa","#2a4fd0","#ffd300","Ryanair"],
-  EZY:["#ff6a00","#ff6a00","#fff","easyJet"], EJU:["#ff6a00","#ff6a00","#fff","easyJet"],
-  EZS:["#ff6a00","#ff6a00","#fff","easyJet Switzerland"],
-  WZZ:["#f4f6fa","#c4007a","#c4007a","Wizz Air"], WMT:["#f4f6fa","#c4007a","#c4007a","Wizz Air Malta"],
-  DLH:["#f4f6fa","#0a2a6e","#ffbf00","Lufthansa"], AFR:["#f4f6fa","#0a2a6e","#e2272e","Air France"],
-  BAW:["#f4f6fa","#0a2a6e","#e2272e","British Airways"], KLM:["#4aa8e8","#4aa8e8","#fff","KLM"],
-  UAE:["#f4f6fa","#d71920","#c9a24b","Emirates"], QTR:["#f4f6fa","#5c0632","#5c0632","Qatar Airways"],
-  ETD:["#f4f6fa","#b8975a","#b8975a","Etihad"], SWR:["#f4f6fa","#e2272e","#e2272e","Swiss"],
-  VLG:["#f4f6fa","#f2c100","#d3202a","Vueling"], TAP:["#f4f6fa","#e2272e","#1b8a4a","TAP Air Portugal"],
-  IBE:["#f4f6fa","#d7192d","#ffc400","Iberia"], THY:["#f4f6fa","#d7192d","#d7192d","Turkish Airlines"],
-  AUA:["#f4f6fa","#e2272e","#e2272e","Austrian"], SAS:["#f4f6fa","#1c2a6e","#1c2a6e","SAS"],
-  FIN:["#f4f6fa","#1c2a6e","#1c2a6e","Finnair"], DAL:["#f4f6fa","#c01933","#003366","Delta"],
-  UAL:["#f4f6fa","#0a4a9e","#0a4a9e","United"], AAL:["#c8ccd2","#0c3b7a","#d71920","American"],
-  ELY:["#f4f6fa","#0a3b8e","#0a3b8e","El Al"], CLX:["#f4f6fa","#e8c200","#e8c200","Cargolux"],
-  FDX:["#f4f6fa","#4d148c","#ff6200","FedEx"], UPS:["#6b4a2b","#6b4a2b","#ffc72c","UPS"],
-  DHX:["#ffcc00","#ffcc00","#d40511","DHL"], BCS:["#ffcc00","#ffcc00","#d40511","DHL Air"],
-  DHK:["#ffcc00","#ffcc00","#d40511","DHL UK"], GEC:["#f4f6fa","#ffcc00","#d40511","Lufthansa Cargo"],
-  PGT:["#f4f6fa","#f2c200","#d3202a","Pegasus Airlines"], NOS:["#f4f6fa","#1d5fa8","#4aa8e8","Neos"],
-  SXS:["#f4f6fa","#f2c200","#e2272e","SunExpress"], AEE:["#f4f6fa","#1d4fa8","#1d4fa8","Aegean"],
-  EWG:["#f4f6fa","#b0136a","#b0136a","Eurowings"], LOT:["#f4f6fa","#1d3a8a","#e2272e","LOT"],
-  TRA:["#f4f6fa","#2fb34a","#2fb34a","Transavia"], TVF:["#f4f6fa","#2fb34a","#2fb34a","Transavia France"],
-  BEL:["#f4f6fa","#1d3a8a","#e2272e","Brussels Airlines"], VOE:["#f4f6fa","#d7192d","#d7192d","Volotea"]
+  EXS:["#e5e8ec","#d61828","#0b2545","Jet2.com"],
+  ITY:["#1f4aa8","#1f4aa8","#1fa35b","ITA Airways"],
+  RYR:["#f4f6fa","#113780","#ffd300","Ryanair"],
+  EZY:["#ffffff","#ff6a00","#ff6a00","easyJet"],
+  EJU:["#ffffff","#ff6a00","#ff6a00","easyJet"],
+  EZS:["#ffffff","#ff6a00","#ff6a00","easyJet Switzerland"],
+  WZZ:["#d81577","#19378c","#d81577","Wizz Air"],
+  WMT:["#d81577","#19378c","#d81577","Wizz Air Malta"],
+  DLH:["#f4f6fa","#001b44","#ffbf00","Lufthansa"],
+  AFR:["#f4f6fa","#002157","#e2272e","Air France"],
+  BAW:["#f4f6fa","#0b2341","#eb2226","British Airways"],
+  KLM:["#00a1de","#00a1de","#fff","KLM"],
+  UAE:["#f4f6fa","#d71920","#00732f","Emirates"],
+  QTR:["#f4f6fa","#5c0632","#5c0632","Qatar Airways"],
+  ETD:["#f4f6fa","#a38343","#4c4033","Etihad"],
+  SWR:["#f4f6fa","#e2272e","#e2272e","Swiss"],
+  VLG:["#f4f6fa","#ffcc00","#333333","Vueling"],
+  TAP:["#f4f6fa","#008749","#da291c","TAP Air Portugal"],
+  IBE:["#f4f6fa","#d7192d","#ffc400","Iberia"],
+  THY:["#f4f6fa","#c8102e","#232930","Turkish Airlines"],
+  AUA:["#f4f6fa","#e2272e","#e2272e","Austrian"],
+  SAS:["#bcc4cf","#00205b","#00205b","SAS"],
+  FIN:["#f4f6fa","#0b1560","#0b1560","Finnair"],
+  DAL:["#f4f6fa","#002855","#c01933","Delta"],
+  UAL:["#f4f6fa","#002244","#005da4","United"],
+  AAL:["#c8ccd2","#00467f","#c41230","American"],
+  ELY:["#f4f6fa","#00247d","#c5a059","El Al"],
+  CLX:["#f4f6fa","#00457c","#df1c24","Cargolux"],
+  FDX:["#501878","#ff6200","#501878","FedEx"],
+  UPS:["#351c15","#351c15","#ffb500","UPS"],
+  DHX:["#ffcc00","#d40511","#d40511","DHL"],
+  BCS:["#ffcc00","#d40511","#d40511","DHL Air"],
+  DHK:["#ffcc00","#d40511","#d40511","DHL UK"],
+  GEC:["#f4f6fa","#ffcc00","#001b44","Lufthansa Cargo"],
+  PGT:["#f4f6fa","#ef3926","#ffcc00","Pegasus Airlines"],
+  NOS:["#1d5fa8","#1d5fa8","#4aa8e8","Neos"],
+  SXS:["#f4f6fa","#f2c200","#e2272e","SunExpress"],
+  AEE:["#f4f6fa","#002b49","#0074bb","Aegean"],
+  EWG:["#f4f6fa","#990033","#003366","Eurowings"],
+  LOT:["#f4f6fa","#002244","#e2272e","LOT"],
+  TRA:["#f4f6fa","#00b140","#00b140","Transavia"],
+  TVF:["#f4f6fa","#00b140","#00b140","Transavia France"],
+  BEL:["#f4f6fa","#1d3a8a","#e2272e","Brussels Airlines"],
+  VOE:["#f4f6fa","#d7192d","#d7192d","Volotea"]
 };
 const DEF = ["#f4f6fa","#5f7fa8","#e2b03a","Volo"];
 
@@ -258,7 +269,7 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-// ===== GESTIONE METEO =====
+// ===== GESTIONE METEO (Open-Meteo) =====
 function setSkyTheme(type, isWindy) {
   const p = $("poster");
   p.dataset.weather = type;
@@ -375,45 +386,6 @@ async function getRoute(cs){
   }catch(e){return routeCache[cs]=null;}
 }
 
-// ===== RECUPERO FOTO REALE: prima Planespotters diretto, poi via Worker =====
-const photoCache={};
-async function getAircraftPhoto(hex){
-  if(!hex) return null;
-  if(hex in photoCache) return photoCache[hex];
-  
-  // 1. Prova diretta dal browser
-  try {
-    const r = await fetch(`https://api.planespotters.net/pub/photos/hex/${hex}`);
-    if (r.ok) {
-      const j = await r.json();
-      if (j.photos && j.photos.length > 0) {
-        const p = j.photos[0];
-        return photoCache[hex] = {
-          url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
-          photographer: p.photographer
-        };
-      }
-    }
-  } catch(e) {}
-
-  // 2. Fallback tramite Worker
-  try {
-    const r2 = await fetch(`${WORKER}/photo?hex=${hex}`);
-    if (r2.ok) {
-      const j2 = await r2.json();
-      if (j2.photos && j2.photos.length > 0) {
-        const p = j2.photos[0];
-        return photoCache[hex] = {
-          url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
-          photographer: p.photographer
-        };
-      }
-    }
-  } catch(e) {}
-
-  return photoCache[hex] = null;
-}
-
 let st1="", diagLine="";
 function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
 function setSt(t){st1=t;paint();}
@@ -462,12 +434,11 @@ async function render(a){
   current=a.hex;
   const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
 
-  // PRIORITÀ TRATTA: Usiamo sempre prima le IATA live di Flightradar24
+  // PRIORITÀ TRATTA: Flightradar24 in diretta
   let origIata = a.orig_iata || "";
   let destIata = a.dest_iata || "";
   let o = null, d = null, fr = null;
 
-  // Solo se Flightradar24 non ha la tratta, interroghiamo adsbdb
   if(!origIata || !destIata){
     fr = await getRoute(cs);
     if(fr && fr.origin && fr.destination){
@@ -483,31 +454,20 @@ async function render(a){
   const el = $("plane");
   const trk = a.track ?? a.true_heading ?? 0;
 
-  // 1. Foto reale
-  const photo = await getAircraftPhoto(a.hex);
-  if(photo){
-    el.classList.remove("flip");
-    el.innerHTML=`
-      <div id="real-photo-wrap">
-        <img id="real-photo" src="${photo.url}" alt="${cs}">
-        <span class="photo-credit">Foto: © ${photo.photographer} (Planespotters.net)</span>
-      </div>`;
-  }else{
-    // Fallback sagoma SVG corretta
-    el.innerHTML = planeSVG(kindOf(a), liv);
-    el.classList.toggle("flip", trk > 180 && trk < 360);
-  }
+  // Render sagoma vettoriale con livrea della compagnia
+  el.innerHTML = planeSVG(kindOf(a), liv);
+  el.classList.toggle("flip", trk > 180 && trk < 360);
 
   $("who").textContent = [airline, cs, NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
 
-  // 2. Codici IATA grandi
+  // Codici IATA in grande
   if(origIata && destIata){
     $("route").innerHTML = `${origIata} <i>→</i> ${destIata}`;
   } else {
     $("route").innerHTML = cs || "Volo in transito";
   }
 
-  // 3. Nome degli aeroporti sotto
+  // Nome degli aeroporti sotto ai codici
   const origName = formatAirport(o, origIata);
   const destName = formatAirport(d, destIata);
   if(origName && destName){
@@ -521,10 +481,9 @@ async function render(a){
     $("airports").style.display = "none";
   }
 
-  // 4. Stato del volo
+  // Quota e velocità
   const vr = a.baro_rate ?? a.geom_rate ?? 0;
   let st = vr > 250 ? "in salita" : (vr < -250 ? "in discesa" : "in quota");
-  // Se è sotto gli 8000ft vicino a Malpensa/Linate è in avvicinamento
   if (a.alt_baro < 8000 && (destIata === "MXP" || destIata === "LIN" || destIata === "BGY")) {
     st = vr < -100 ? "in atterraggio" : "in avvicinamento";
   }
