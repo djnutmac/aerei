@@ -29,32 +29,41 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .cl::before{width:5cqh;height:5cqh;left:18%;top:-2.4cqh}
 .cl::after{width:7cqh;height:7cqh;left:42%;top:-3.6cqh}
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
-.top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95}
+.top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95;z-index:3}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
-#status{position:absolute;left:4cqw;top:13.5cqh;max-width:72cqw;font-size:1.1cqw;line-height:1.45;opacity:.7}
-#status .bad{color:#ff8a80;font-weight:600}#status .good{color:#9be59b}
 .live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
 .dot{width:1.1cqw;height:1.1cqw;border-radius:50%;background:#ff4b4b;animation:pulse 1.4s infinite}
 @keyframes pulse{50%{opacity:.25}}
-#stage{position:absolute;left:0;right:0;top:12cqh;height:46cqh;display:grid;place-items:center}
-#plane{width:56cqw;filter:drop-shadow(0 1.4cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
+
+/* Centro esatto sia orizzontale che verticale */
+#stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:2}
+#plane{width:68cqw;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
 #plane.flip{transform:scaleX(-1)}
 #plane svg{width:100%;display:block;overflow:visible}
 @keyframes bob{50%{translate:0 -1.6cqh;rotate:-1.2deg}}
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
+
 .info{position:absolute;left:0;right:0;bottom:0;height:34cqh;padding:0 4cqw 4cqh;display:flex;flex-direction:column;justify-content:flex-end;
-  background:linear-gradient(#0000,#0b1020cc 40%)}
+  background:linear-gradient(#0000,#0b1020cc 40%);z-index:3;pointer-events:none}
 .poster[data-t=day] .info{background:linear-gradient(#0000,#0b2a5acc 40%)}
 .who{font-size:1.9cqw;font-weight:400;opacity:.9}
 .route{font-size:7.4cqw;font-weight:700;line-height:1.05;letter-spacing:-.02em;white-space:nowrap}
 .route i{font-style:normal;color:#ffd93b;padding:0 1.2cqw}
 .stats{display:flex;gap:3.2cqw;font-size:2cqw;font-weight:600;margin-top:1cqh}
 .stats span{font-weight:400;opacity:.75;font-size:1.5cqw;margin-left:.4cqw}
-.compass{position:absolute;right:4cqw;bottom:11cqh;width:7cqw;height:7cqw;border:.35cqw solid #fff9;border-radius:50%;display:grid;place-items:center;font-size:1.3cqw}
+
+/* Bussola */
+.compass{position:absolute;right:4cqw;bottom:11cqh;width:7cqw;height:7cqw;border:.35cqw solid #fff9;border-radius:50%;display:grid;place-items:center;font-size:1.3cqw;z-index:3}
 .compass b{position:absolute;top:-2cqw;font-weight:600}
 .compass svg{width:3.6cqw;transition:transform 1s}
-#empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;font-size:4cqw;font-weight:600;padding:0 8cqw}
+
+/* Stato e Diagnostica in basso a destra sotto alla bussola */
+#status{position:absolute;right:4cqw;bottom:2.2cqh;max-width:46cqw;font-size:.95cqw;line-height:1.45;opacity:.8;text-align:right;z-index:3}
+#status .bad{color:#ff8a80;font-weight:600}
+#status .good{color:#9be59b;font-weight:600}
+
+#empty{position:absolute;inset:0;display:none;place-items:center;text-align:center;font-size:4cqw;font-weight:600;padding:0 8cqw;z-index:4}
 #empty small{display:block;font-weight:400;font-size:1.8cqw;opacity:.8;margin-top:1.2cqh}
 .idle #stage,.idle .info,.idle .compass{display:none}
 .idle #empty{display:grid}
@@ -82,17 +91,12 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 
 <script>
 // ===== CONFIGURAZIONE =====
-const HOME = {lat:45.3158, lon:8.8573};   // Vigevano (centro)
-const RADIUS_NM = 20;                      // raggio di ricerca in miglia nautiche
-const POLL_MS = 8000;
+const HOME = {lat:45.3158, lon:8.8573};   // Vigevano
+const RADIUS_NM = 20;
+const POLL_MS = 6000;
 const WORKER = "https://aerei.djnutmac.workers.dev".replace(/\/$/,"");
-const APIS = [
-  (la,lo,d)=>`https://api.adsb.lol/v2/point/${la}/${lo}/${d}`,
-  (la,lo,d)=>`https://api.airplanes.live/v2/point/${la}/${lo}/${d}`,
-  (la,lo,d)=>`https://opendata.adsb.fi/api/v2/lat/${la}/lon/${lo}/dist/${d}`
-];
 
-// ===== LIVREE (prefisso ICAO callsign -> corpo, coda, accento, nome) =====
+// ===== LIVREE =====
 const L = {
   ITY:["#f4f6fa","#1f4aa8","#1fa35b","ITA Airways"], RYR:["#f4f6fa","#2a4fd0","#ffd300","Ryanair"],
   EZY:["#ff6a00","#ff6a00","#fff","easyJet"], EJU:["#ff6a00","#ff6a00","#fff","easyJet"],
@@ -132,7 +136,6 @@ const rad = d => d*Math.PI/180;
 const dist = (a,b,c,d)=>{const R=6371,x=rad(c-a),y=rad(d-b);
   const h=Math.sin(x/2)**2+Math.cos(rad(a))*Math.cos(rad(c))*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h));};
 
-// ===== DISEGNO AEREO (SVG, vista laterale, muso a destra) =====
 function planeSVG(kind,[body,tail,acc]){
   const wide = kind==="wide", prop = kind==="prop";
   const h = wide?1.28:prop?.9:1, top = 58-26*h, bot = 58+26*h;
@@ -156,7 +159,6 @@ function planeSVG(kind,[body,tail,acc]){
   </svg>`;
 }
 
-// ===== CIELO =====
 function skyPhase(){const h=new Date().getHours()+new Date().getMinutes()/60;
   const m=new Date().getMonth(); const rise=m>9||m<2?7.4:m>3&&m<8?6:6.7, set=m>9||m<2?17:m>3&&m<8?20.6:18.6;
   if(h>rise+.7&&h<set-.7)return"day"; if(h>rise-.7&&h<set+.7)return"dusk"; return"night";}
@@ -166,17 +168,6 @@ function buildSky(){
 }
 function tick(){$("poster").dataset.t=skyPhase();$("clock").textContent="in diretta · "+new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"});}
 
-// ===== DATI VOLO =====
-const PROX=[u=>u,u=>"https://corsproxy.io/?url="+encodeURIComponent(u),u=>"https://api.allorigins.win/raw?url="+encodeURIComponent(u)];
-const VIA=["diretto","proxy 1","proxy 2"]; let via=0;
-async function getJSON(url){
-  let last;
-  for(let k=0;k<PROX.length;k++){const i=(via+k)%PROX.length;
-    try{const r=await fetch(PROX[i](url)); if(!r.ok)throw new Error("HTTP "+r.status); const j=await r.json(); via=i; return j;}
-    catch(e){last=e;}
-  }
-  throw last;
-}
 function routeOK(fr,a){
   if(!fr||!fr.origin||!fr.destination)return false;
   const o=fr.origin,d=fr.destination;
@@ -188,47 +179,40 @@ function routeOK(fr,a){
 const routeCache={};
 async function getRoute(cs){
   if(!cs)return null; if(cs in routeCache)return routeCache[cs];
-  try{const j=WORKER?await (await fetch(`${WORKER}/route?cs=${cs}`)).json():await getJSON("https://api.adsbdb.com/v0/callsign/"+cs);
-    return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
+  try{
+    const r=await fetch(`${WORKER}/route?cs=${cs}`);
+    const j=await r.json();
+    return routeCache[cs]=j.response&&j.response.flightroute||null;
+  }catch(e){return routeCache[cs]=null;}
 }
 
-// ===== MINILOG: stato di ogni fonte =====
-const SRC_NAMES=["adsb.lol","flightradar24","opensky","adsb.fi"];
 let st1="", diagLine="";
 function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
 function setSt(t){st1=t;paint();}
+
 async function runDiag(){
-  if(!WORKER)return;
   try{
     const r=await fetch(`${WORKER}/diag?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}`);
     const j=await r.json();
     diagLine=j.map(x=>x.ok?`<span class="good">${x.name} ✓${x.n!=null?" "+x.n+" aerei":""} ${x.ms}ms</span>`
-      :`<span class="bad">${x.name} ✗ ${x.status?"HTTP "+x.status:(x.err||"errore")}</span>`).join(" · ");
-  }catch(e){diagLine=`<span class="bad">diagnostica non raggiungibile: ${e.message}</span>`;}
+      :`<span class="bad">${x.name} ✗ ${x.err||("HTTP "+x.status)}</span>`).join(" · ");
+  }catch(e){diagLine=`<span class="bad">diagnostica offline</span>`;}
   paint();
 }
+
 async function fetchAircraft(){
-  let workerErr = "";
-  if(WORKER){
-    try{
-      const r=await fetch(`${WORKER}/ac?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}&dist=${RADIUS_NM}`);
-      const j=await r.json();
-      if(!r.ok)throw new Error((j.errs&&j.errs.join(" | "))||j.error||"HTTP "+r.status);
-      const srcLabel = j.srcName || SRC_NAMES[j.src] || "worker";
-      setSt(`<span class="good">worker ✓</span> · in uso: <b>${srcLabel}</b> · ${j.ac.length} aerei nel raggio`+(j.errs&&j.errs.length?` · saltate: ${j.errs.join(" | ")}`:""));
-      return j.ac;
-    }catch(e){
-      workerErr = `worker ✗ (${e.message}) → fallback browser · `;
-    }
+  try{
+    const r=await fetch(`${WORKER}/ac?lat=${HOME.lat.toFixed(3)}&lon=${HOME.lon.toFixed(3)}&dist=${RADIUS_NM}`);
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||"HTTP "+r.status);
+    setSt(`<span class="good">worker ✓</span> · <b>${j.srcName}</b> · ${j.ac.length} aerei`);
+    return j.ac;
+  }catch(e){
+    setSt(`<span class="bad">worker ✗ ${e.message}</span>`);
+    return null;
   }
-  // Fallback automatico lato browser se il worker non è configurato o fallisce
-  const res=await Promise.allSettled(APIS.map(f=>getJSON(f(HOME.lat,HOME.lon,RADIUS_NM))));
-  const map=new Map(); let ok=0, errs=[];
-  res.forEach(r=>{if(r.status!=="fulfilled")errs.push(String(r.reason&&r.reason.message||r.reason));
-    if(r.status==="fulfilled"){ok++;(r.value.ac||r.value.aircraft||[]).forEach(a=>{if(a.hex&&!map.has(a.hex))map.set(a.hex,a);});}});
-  setSt(workerErr+`fonti browser ${ok}/${APIS.length} · ${map.size} aerei nel raggio · ${VIA[via]}`+(errs.length?` · errore: ${errs[0]}`:""));
-  return ok?[...map.values()]:null;
 }
+
 let current=null;
 function pick(list){
   const cand=list.filter(a=>a.lat!=null&&typeof a.alt_baro==="number"&&a.alt_baro>200&&(a.seen_pos==null||a.seen_pos<60)).map(a=>{
@@ -240,6 +224,7 @@ function pick(list){
 }
 function kindOf(a){const t=a.t||""; if(WIDE.includes(t)||a.category==="A5")return"wide";
   if(PROP.includes(t)||a.category==="A1"||a.category==="A7")return"prop"; return"narrow";}
+
 async function render(a){
   current=a.hex;
   const cs=(a.flight||"").trim(), pre=cs.slice(0,3);
@@ -263,13 +248,14 @@ async function render(a){
   $("arrow").style.transform=`rotate(${trk}deg)`;
   $("poster").classList.remove("idle");
 }
+
 async function loop(){
   const list=await fetchAircraft();
   if(list){const a=pick(list); if(a)await render(a); else{current=null;$("emptyTxt").textContent="Nessun aereo sopra di te";$("poster").classList.add("idle");}}
   else if(!current){$("emptyTxt").textContent="Non riesco a leggere i dati dei voli";$("poster").classList.add("idle");}
   setTimeout(loop,POLL_MS);
 }
-// ===== SCHERMO INTERO (click / tap) =====
+
 function toggleFS(){
   const d=document, el=d.documentElement;
   const on=d.fullscreenElement||d.webkitFullscreenElement;
@@ -282,8 +268,7 @@ document.addEventListener("click",toggleFS);
 document.addEventListener("keydown",e=>{if(e.key==="f"||e.key==="F")toggleFS();});
 
 buildSky(); tick(); setInterval(tick,30000); loop();
-// Avvia la diagnostica dopo 3 secondi per non fare chiamate doppie all'avvio
-setTimeout(()=>{ runDiag(); setInterval(runDiag,60000); }, 3000);
+setTimeout(()=>{ runDiag(); setInterval(runDiag,60000); }, 2000);
 </script>
 </body>
 </html>
