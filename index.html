@@ -19,12 +19,12 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   background:linear-gradient(var(--sky1),var(--sky2));transition:background 2s;
 }
 
-/* Fasi luce solare */
+/* Fasi di luce solare */
 .poster[data-t=day]{--sky1:#4aa8f0;--sky2:#bfe6ff;--cloud:#ffffffcc}
 .poster[data-t=dusk]{--sky1:#5b3d8f;--sky2:#ffa870;--cloud:#ffd9c299}
 .poster[data-t=night]{--sky1:#0b1534;--sky2:#2a3a78;--cloud:#8fa0d533}
 
-/* Sovrascrittura meteo */
+/* Sovrascrittura meteo da Open-Meteo */
 .poster[data-weather=cloudy]{--cloud:#cbd5e1bb}
 .poster[data-weather=rain]{--sky1:#2a3b5c;--sky2:#4a5f82;--cloud:#5b6a82dd}
 .poster[data-weather=storm]{--sky1:#111625;--sky2:#1f283d;--cloud:#2c3547ee}
@@ -41,7 +41,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 .poster[data-t=night] .orb{background:#f4ecd0;box-shadow:inset -2.2cqw -.6cqw 0 #cfc5a0}
 .poster[data-weather=storm] .orb, .poster[data-weather=rain] .orb{opacity:0.35}
 
-/* Nuvole */
+/* Nuvole dinamiche */
 #clouds{position:absolute;inset:0;z-index:2;pointer-events:none}
 .cl{position:absolute;height:4.2cqh;border-radius:5cqh;background:var(--cloud);animation:drift linear infinite}
 .cl::before,.cl::after{content:"";position:absolute;background:inherit;border-radius:50%}
@@ -50,7 +50,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes drift{from{transform:translateX(-30cqw)}to{transform:translateX(130cqw)}}
 .windy .cl{animation-duration:18s!important}
 
-/* Effetti Meteo */
+/* Effetti Meteo (Pioggia, Neve, Fulmini) */
 #weather-layer{position:absolute;inset:0;pointer-events:none;z-index:3;overflow:hidden}
 .drop{
   position:absolute;width:.15cqw;height:2.6cqh;background:linear-gradient(transparent,#ffffffcc);
@@ -77,7 +77,7 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
   94%{opacity:.6}
 }
 
-/* Titolo e Barra Live */
+/* Intestazione */
 .top{position:absolute;left:4cqw;top:4cqh;font-size:2.2cqw;font-weight:600;opacity:.95;z-index:5}
 .top small{display:block;font-size:1.4cqw;font-weight:400;opacity:.8}
 .live{display:flex;gap:.8cqw;align-items:center;font-size:1.4cqw;font-weight:400;opacity:.85;margin-top:.4cqh}
@@ -85,20 +85,33 @@ body{display:grid;place-items:center;cursor:pointer;-webkit-tap-highlight-color:
 @keyframes pulse{50%{opacity:.25}}
 .weather-tag{margin-left:.6cqw;font-size:1.2cqw;padding:.2cqh .8cqw;background:#ffffff1f;border-radius:2cqw}
 
-/* Aereo centrato in X e Y */
+/* Aereo centrato sia in X che in Y */
 #stage{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;z-index:4}
-#plane{width:68cqw;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
-#plane.flip{transform:scaleX(-1)}
-#plane svg{width:100%;display:block;overflow:visible}
+#plane{width:68cqw;display:flex;justify-content:center;align-items:center}
+#plane svg{width:100%;display:block;overflow:visible;filter:drop-shadow(0 1.6cqh 0 #0003);animation:bob 4.5s ease-in-out infinite}
+#plane.flip svg{transform:scaleX(-1)}
 @keyframes bob{50%{translate:0 -1.6cqh;rotate:-1.2deg}}
 .windy #plane{animation:bob 2.8s ease-in-out infinite, turb 0.4s ease-in-out infinite alternate}
 @keyframes turb{from{translate:0 -.3cqh}to{translate:0 .3cqh}}
 .prop{transform-origin:center;transform-box:fill-box;animation:spin .12s linear infinite}
 @keyframes spin{to{transform:scaleY(-1)}}
 
-/* Sezione Informazioni Volo */
-.info{position:absolute;left:0;right:0;bottom:0;min-height:34cqh;padding:0 4cqw 3.5cqh;display:flex;flex-direction:column;justify-content:flex-end;
-  background:linear-gradient(#0000,#0b1020dd 50%);z-index:5;pointer-events:none}
+/* Foto reale del velivolo (Planespotters.net) */
+#real-photo-wrap{
+  position:relative;max-width:64cqw;max-height:42cqh;display:flex;flex-direction:column;align-items:center;
+  animation:bob 4.5s ease-in-out infinite;pointer-events:auto;
+}
+#real-photo{
+  max-width:100%;max-height:36cqh;border-radius:1.2cqw;box-shadow:0 1.2cqh 2.4cqh #00000077;
+  object-fit:contain;border:.2cqw solid #ffffff33;
+}
+.photo-credit{font-size:.85cqw;opacity:.75;margin-top:.6cqh;text-shadow:0 1px 3px #000}
+
+/* Pannello informazioni volo in basso */
+.info{
+  position:absolute;left:0;right:0;bottom:0;min-height:34cqh;padding:0 4cqw 3.5cqh;display:flex;flex-direction:column;justify-content:flex-end;
+  background:linear-gradient(#0000,#0b1020dd 50%);z-index:5;pointer-events:none;
+}
 .poster[data-t=day] .info{background:linear-gradient(#0000,#0b2a5add 50%)}
 .who{font-size:1.8cqw;font-weight:400;opacity:.9}
 .route{font-size:6.4cqw;font-weight:700;line-height:1.02;letter-spacing:-.02em;white-space:nowrap}
@@ -205,7 +218,7 @@ const L = {
 };
 const DEF = ["#f4f6fa","#5f7fa8","#e2b03a","Volo"];
 
-// ===== TIPI AEREO =====
+// ===== TIPI VELIVOLO =====
 const WIDE = "A332 A333 A338 A339 A359 A35K A388 B744 B748 B772 B77L B77W B788 B789 B78X B763 B764 A306 A310 MD11".split(" ");
 const PROP = "AT43 AT45 AT72 AT75 AT76 DH8A DH8B DH8C DH8D SF34 E120 PC12 B190 SW4 C208".split(" ");
 const NAMES = {A319:"Airbus A319",A320:"Airbus A320",A20N:"Airbus A320neo",A321:"Airbus A321",A21N:"Airbus A321neo",
@@ -371,6 +384,28 @@ async function getRoute(cs){
   }catch(e){return routeCache[cs]=null;}
 }
 
+// ===== RECUPERO FOTO REALE (Planespotters.net) =====
+const photoCache={};
+async function getAircraftPhoto(hex){
+  if(!hex)return null;
+  if(hex in photoCache)return photoCache[hex];
+  try{
+    const r=await fetch(`${WORKER}/photo?hex=${hex}`);
+    if(!r.ok)return photoCache[hex]=null;
+    const j=await r.json();
+    if(j.photos && j.photos.length>0){
+      const p=j.photos[0];
+      return photoCache[hex]={
+        url: p.thumbnail_large ? p.thumbnail_large.src : p.thumbnail.src,
+        photographer: p.photographer
+      };
+    }
+    return photoCache[hex]=null;
+  }catch(e){
+    return photoCache[hex]=null;
+  }
+}
+
 let st1="", diagLine="";
 function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
 function setSt(t){st1=t;paint();}
@@ -422,17 +457,29 @@ async function render(a){
   if(!routeOK(fr,a))fr=null;
   const liv=L[pre]||DEF, airline=(fr&&fr.airline&&fr.airline.name)||(L[pre]?L[pre][3]:"Volo");
   const el=$("plane");
-  el.innerHTML=planeSVG(kindOf(a),liv);
   const trk=a.track??a.true_heading??0;
-  el.classList.toggle("flip",trk>180&&trk<360);
+
+  // Foto reale dell'aereo o livrea SVG se non trovata
+  const photo=await getAircraftPhoto(a.hex);
+  if(photo){
+    el.classList.remove("flip");
+    el.innerHTML=`
+      <div id="real-photo-wrap">
+        <img id="real-photo" src="${photo.url}" alt="${cs}">
+        <span class="photo-credit">Foto: © ${photo.photographer} (Planespotters.net)</span>
+      </div>`;
+  }else{
+    el.innerHTML=planeSVG(kindOf(a),liv);
+    el.classList.toggle("flip",trk>180&&trk<360);
+  }
 
   const o=fr&&fr.origin, d=fr&&fr.destination;
   $("who").textContent=[airline,cs,NAMES[a.t]||a.t].filter(Boolean).join("  ·  ");
 
-  const origIata = (o&&o.iata_code) || a.orig_iata || "";
-  const destIata = (d&&d.iata_code) || a.dest_iata || "";
+  const origIata=(o&&o.iata_code)||a.orig_iata||"";
+  const destIata=(d&&d.iata_code)||a.dest_iata||"";
 
-  // 1. Mostra i codici IATA grandi (es. MXP → JFK)
+  // Codici IATA in grande
   if(origIata && destIata){
     $("route").innerHTML=`${origIata} <i>→</i> ${destIata}`;
   }else if(fr){
@@ -442,18 +489,18 @@ async function render(a){
     $("route").innerHTML=cs||"Volo in transito";
   }
 
-  // 2. Mostra i nomi completi degli aeroporti subito sotto
-  const origName = formatAirport(o, origIata);
-  const destName = formatAirport(d, destIata);
+  // Nome degli aeroporti sotto ai codici IATA
+  const origName=formatAirport(o,origIata);
+  const destName=formatAirport(d,destIata);
   if(origName && destName){
     $("airports").innerHTML=`${origName} <i>→</i> ${destName}`;
-    $("airports").style.display = "block";
+    $("airports").style.display="block";
   }else if(origName || destName){
-    $("airports").textContent = origName || destName;
-    $("airports").style.display = "block";
+    $("airports").textContent=origName||destName;
+    $("airports").style.display="block";
   }else{
-    $("airports").textContent = "";
-    $("airports").style.display = "none";
+    $("airports").textContent="";
+    $("airports").style.display="none";
   }
 
   const vr=a.baro_rate??a.geom_rate??0, st=vr>300?"in salita":vr<-300?"in discesa":"in quota";
