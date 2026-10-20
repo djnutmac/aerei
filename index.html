@@ -194,7 +194,7 @@ async function getRoute(cs){
     return routeCache[cs]=j.response&&j.response.flightroute||null;}catch(e){return routeCache[cs]=null;}
 }
 // ===== MINILOG: stato di ogni fonte =====
-const SRC_NAMES=["adsb.lol","airplanes.live","adsb.fi"];
+const SRC_NAMES=["adsb.lol","adsb.one","airplanes.live","adsb.fi"];
 let st1="", diagLine="";
 function paint(){$("status").innerHTML=st1+(diagLine?"<br>"+diagLine:"");}
 function setSt(t){st1=t;paint();}
